@@ -72,3 +72,16 @@ Evidence:
 What is next:
 - Merge with the M1-ordering and M2-recipes branches; the pipeline runs the full suite.
 - Human housekeeping: delete C:\dev\hub-m3-scratch-187210 (the delete guard blocks agents from removing it).
+## 2026-10-06 - G3 E2E (done)
+What I did:
+- tests/e2e/hub_smoke_flow_test.php (2 tests, black-box over HTTP, harness TestApp on a free port):
+  1. SPEC s13 flow as hub.user: health + login.html served -> POST /api/login (role hub, location type hub) -> /api/me -> GET /api/stock (fincon_status OK, s7.1 statuses, no cost/price keys) -> GET /api/ingredients -> POST /api/orders SMP001 x10 + SMP004 x2.5 with fake client prices (unit_price = cost_price, 125.00 / 300.00 / total 425.00, price_basis cost, HQ notification sent) -> order in history + detail -> POST /api/batches muffin x24 (134.16 / 5.59, inventory deltas exactly -1.440..-0.240, SMP006 unchanged) -> GET /api/reports/finished-goods shows the batch, items and totals 24 / 134.16 / 1, CSV header + TOTAL row -> FinCon mock log all kind=read -> logout, token then 401.
+  2. Every page in the flow (login, index, ordering, recipes, reports) is served as text/html and every asset it references returns 200.
+- No product bugs found: the e2e passed on the first run. No product code changed. tests/acceptance untouched.
+- .pipeline/test-cmd.txt unchanged (`php tests/run.php` already runs tests/e2e; see DECISIONS-LOG g3-e2e).
+- Evidence: `php tests/run.php e2e` -> RESULT: 2 passed, 0 failed; full `php tests/run.php` -> RESULT: 89 passed, 0 failed, exit 0.
+- Not done: real-browser drive of the UI pages (Playwright tool permission not granted in this headless run).
+
+What is next:
+- G4 verifier grades the build against SPEC.md.
+- Human: a manual browser pass on login -> ordering -> recipes -> reports. Scratch files under var/ (gitignored: var/e2e-serve.php, var/e2e-full-run.log, var/e2e-serve-url.txt, var/test/) can be deleted.
