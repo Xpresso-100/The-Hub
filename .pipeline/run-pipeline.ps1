@@ -123,6 +123,41 @@ function Fix-Loop($gate) {
     Guard-Tests
   }
 }
+function Branch-Exists($b) { git show-ref --verify --quiet "refs/heads/$b"; return ($LASTEXITCODE -eq 0) }
+function Is-Merged($b) { git merge-base --is-ancestor $b HEAD; return ($LASTEXITCODE -eq 0) }
+function Merge-InProgress { git rev-parse -q --verify MERGE_HEAD *> $null; return ($LASTEXITCODE -eq 0) }
+function Ensure-MergeAttributes {
+  # Shared log files are appended by every builder: union-merge them, keep main's feature list.
+  $ga = (git rev-parse --git-path info/attributes).Trim()
+  New-Item -ItemType Directory -Force (Split-Path $ga -Parent) | Out-Null
+  $want = @('progress.md merge=union', 'DECISIONS-LOG.md merge=union', 'feature_list.json merge=ours')
+  $cur = @()
+  if (Test-Path $ga) { $cur = @(Get-Content $ga) }
+  $add = @($want | Where-Object { $cur -notcontains $_ })
+  if ($add.Count -gt 0) { Add-Content -Path $ga -Value $add -Encoding Ascii }
+  git config merge.ours.driver true
+}
+function Merge-Module($m) {
+  git merge --no-ff "mod-$m" -m "merge module $m" | Out-Null
+  if ($LASTEXITCODE -eq 0) { Guard-Tests; Log "module $m merged"; return $true }
+  $conf = @(git diff --name-only --diff-filter=U)
+  Log "MERGE CONFLICT module $m in: $($conf -join ', ') - running resolver"
+  Run-Node "resolve-$m" $Opus 'high' 40 (Build-Prompt 'resolve' @{ MODULE = $m; FILES = ($conf -join "`n") }) $Root | Out-Null
+  if (-not (Merge-InProgress)) {
+    if (Is-Merged "mod-$m") { Guard-Tests; Log "module $m merged by resolver"; return $true }
+    Log "resolver left no merge in progress and module $m is not merged"; return $false
+  }
+  $existing = @($conf | Where-Object { Test-Path (Join-Path $Root $_) })
+  $markers = @()
+  if ($existing.Count -gt 0) { $markers = @(Select-String -Path ($existing | ForEach-Object { Join-Path $Root $_ }) -Pattern '^(<<<<<<<|>>>>>>>)( |$)' -List) }
+  if ($markers.Count -gt 0) { git merge --abort | Out-Null; Log "resolver left conflict markers in: $(($markers | ForEach-Object { $_.Path }) -join ', ')"; return $false }
+  git add -A | Out-Null
+  git commit --no-edit | Out-Null
+  if ($LASTEXITCODE -ne 0) { git merge --abort | Out-Null; Log "could not commit resolved merge for $m"; return $false }
+  Guard-Tests
+  Log "module $m merged after conflict resolution"
+  return $true
+}
 function Scan-Secrets {
   $hits = @(git grep -nIE "(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|xox[abp]-[0-9A-Za-z-]{10,})" -- . ':!.pipeline')
   $envTracked = @(git ls-files | Where-Object { $_ -match '(^|/)\.env$' })
@@ -163,12 +198,19 @@ if (Want 'G1') {
 # ---------- G2 BUILD (parallel worktrees if modules, else serial) ----------
 if (Want 'G2') {
   if ($modules.Count -gt 0 -and $modules[0] -ne 'serial') {
+    Ensure-MergeAttributes
+    if (Merge-InProgress) { git merge --abort | Out-Null }
     $repoName = Split-Path $Root -Leaf
     $parent = Split-Path $Root -Parent
+    # Resume-safe: a module whose branch already exists is NOT rebuilt, only merged.
+    $toBuild = @($modules | Where-Object { -not (Branch-Exists "mod-$_") })
+    $reused = @($modules | Where-Object { $toBuild -notcontains $_ })
+    if ($reused.Count -gt 0) { Log "G2 reusing existing module branches (no rebuild): $($reused -join ', ')" }
     $jobs = @()
-    foreach ($m in $modules) {
+    foreach ($m in $toBuild) {
       $wt = Join-Path $parent "$repoName-wt-$m"
       git worktree add $wt -b "mod-$m" | Out-Null
+      if (-not (Test-Path $wt)) { Fail-Gate 'G2 build' "could not create worktree for $m" }
       $p = Build-Prompt 'build' @{ MODULE = $m }
       Set-Content -Path "$RunDir/build-$m.prompt.md" -Value $p -Encoding Ascii
       $cliArgs = Get-CliArgs $Opus 'high' 80
@@ -180,20 +222,23 @@ if (Want 'G2') {
         $LASTEXITCODE
       } -ArgumentList $wt, $p, $cliArgs, "$RunDir/build-$m.log"
     }
-    Wait-Job $jobs | Out-Null
-    foreach ($j in $jobs) { $c = Receive-Job $j; Log "NODE build-$($j.Name) exit=$($c | Select-Object -Last 1)"; Remove-Job $j }
+    if ($jobs.Count -gt 0) {
+      Wait-Job $jobs | Out-Null
+      foreach ($j in $jobs) { $c = Receive-Job $j; Log "NODE build-$($j.Name) exit=$($c | Select-Object -Last 1)"; Remove-Job $j }
+      foreach ($m in $toBuild) {
+        $wt = Join-Path $parent "$repoName-wt-$m"
+        git -C $wt add -A | Out-Null
+        git -C $wt diff --cached --quiet
+        if ($LASTEXITCODE -ne 0) { git -C $wt commit -m "module ${m}: pipeline autocommit" | Out-Null }
+      }
+    }
     $blocked = @()
     foreach ($m in $modules) {
-      $wt = Join-Path $parent "$repoName-wt-$m"
-      git -C $wt add -A | Out-Null
-      git -C $wt diff --cached --quiet
-      if ($LASTEXITCODE -ne 0) { git -C $wt commit -m "module ${m}: pipeline autocommit" | Out-Null }
-      git merge --no-ff "mod-$m" -m "merge module $m" | Out-Null
-      if ($LASTEXITCODE -ne 0) { git merge --abort | Out-Null; $blocked += $m; Log "LANE BREACH / merge conflict in module $m - skipped" }
-      else { Guard-Tests }
+      if (Is-Merged "mod-$m") { Log "module $m already merged"; continue }
+      if (-not (Merge-Module $m)) { $blocked += $m }
     }
     Cleanup-Worktrees
-    if ($blocked.Count -gt 0) { Fail-Gate 'G2 build' "merge conflict in: $($blocked -join ', ')" }
+    if ($blocked.Count -gt 0) { Fail-Gate 'G2 build' "unresolved merge conflict in: $($blocked -join ', '). Module code is safe on branches mod-*" }
   } else {
     Run-Node 'build-all' $Opus 'high' 120 (Build-Prompt 'build' @{ MODULE = 'all' }) $Root | Out-Null
     Commit-All 'pipeline: G2 build'
