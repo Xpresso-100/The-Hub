@@ -90,3 +90,11 @@ What I did:
 - Ran php tests/run.php: RESULT: 89 passed, 0 failed. Checked A1-A7, locked rules, secrets grep, dependency audit (none). Wrote .run/VERDICT.md: SHIP.
 What is next:
 - Human: manual browser pass on the UI.
+## 2026-10-06 - G5 PACKAGE (done)
+What I did:
+- deploy/: build-bundle.ps1, upload/hub/ (65 files, 199,241 bytes, generated from the repo), FILE-LIST.txt, sql/ (01 tables, 02 SAMPLE data, 03 users TEMPLATE), config.local.php.TEMPLATE, htaccess-root.txt, DEPLOY.md (upload steps, every setting incl. FinCon URL and key in plain English, 3 post-upload checks).
+- Method = xneelo upload, same as the reference (CODEBASE_MAP s7). 4 g5-package lines in DECISIONS-LOG.md.
+- Evidence: built the bundle, ran `php bin/migrate.php` (sqlite, dev env) and `php -S -t public` from inside deploy/upload/hub: /api/health -> {"success":true,"status":"ok"}, login.html -> 200. Only CHANGE-ME placeholders in the bundle. Not tested: real Apache/.htaccess rules, MySQL import, live FinCon.
+What is next:
+- Human: follow deploy/DEPLOY.md on xneelo; get 2 bcrypt hashes made with bin/hash_password.php; do the 3 checks; the .htaccess deny rules are only proven by check 3.
+- STATUS.md was already modified before this node and is left uncommitted.

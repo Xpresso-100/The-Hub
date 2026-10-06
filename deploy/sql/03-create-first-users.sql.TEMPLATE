@@ -1,0 +1,15 @@
+-- The Hub - first real logins. TEMPLATE: copy to 03-create-first-users.sql, replace every <...>, then run in phpMyAdmin.
+-- Run ONE statement at a time (phpMyAdmin SQL tab, reference runbook s3). Run 01 and 02 first.
+-- A user's role is the TYPE of the location they belong to: hq, hub or franchise.
+-- <HASH> is a bcrypt hash made by the developer with: php bin/hash_password.php < password.txt
+-- Never type a plain password into this file.
+
+INSERT INTO locations (name, type, active, created_at) VALUES ('Xpresso HQ', 'hq', 1, NOW());
+
+INSERT INTO locations (name, type, active, created_at) VALUES ('The Hub', 'hub', 1, NOW());
+
+INSERT INTO users (location_id, username, email, password_hash, active, created_at)
+VALUES ((SELECT id FROM locations WHERE type = 'hq' LIMIT 1), '<hq-username>', '<hq-email>', '<HASH>', 1, NOW());
+
+INSERT INTO users (location_id, username, email, password_hash, active, created_at)
+VALUES ((SELECT id FROM locations WHERE type = 'hub' LIMIT 1), '<hub-username>', '<hub-email>', '<HASH>', 1, NOW());
