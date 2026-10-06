@@ -27,3 +27,19 @@ What I did:
 What is next:
 - G2: build M1-ordering, M2-recipes, M3-reports in parallel, only inside the SPEC s2.4 file lists, against docs/CORE_API.md. Module unit tests go in tests/unit/<Module>/. Run one file with `php tests/run.php <substring>`.
 - Human housekeeping: the scratch folders C:\dev\hub-g1-proto and C:\dev\hub-g1-check (outside the repo) can be deleted.
+
+## 2026-10-06 - G2 BUILD M1-ordering (done, awaiting pipeline test run)
+What I did (only files in the SPEC s2.4 M1 list; no shared file changed, no LANE BREACH):
+- M1-01 routes.php + hub login module test. M1-02/03 IngredientController (GET /api/ingredients, PUT /api/admin/ingredients/{sku}).
+- M1-04 StockService/StockController: GET /api/stock through FinconStockReader only, stock_cache with TTL, stale flag (failure or > 48 h), fail-open to in_stock, no cost/price keys.
+- M1-05..08 OrderService/OrderController/OrderNotifier: POST /api/orders at cost (server-side cost_cents, client prices ignored, all s7.4 422 cases, SAMPLE refused in production), HQ notification + order_notifications outbox (failure never loses the order), location-scoped GET /api/orders and /{id}, PATCH status (forward-only, compare-and-set, delivered credits the hub ledger exactly once).
+- M1-09 public/ordering.html + assets/ordering.js (franchise: stock only; hub: stock, order form, history; hq: all orders + status control; all values escaped).
+- M1-10 bin/import_ingredients.php (all-or-nothing, line-numbered errors).
+- tests/unit/Ordering: 8 files, 30 tests, all pass.
+- Full `php tests/run.php` in this worktree: RESULT 53 passed, 12 failed. All 12 failures are A1(batch)/A2/A4/A5/A6 tests stopping at M2/M3 routes (/api/recipes, /api/inventory, /api/batches, /api/reports) that are built in the other worktrees. M1's acceptance checks pass: A1 orders, A3 (3/3), A7 (3/3).
+- Not done: a real-browser check of ordering.html (browser tool permission not granted in this headless run); the page is covered by an HTTP-served + escaping-lint unit test only.
+- 5 m1 lines added to DECISIONS-LOG.md.
+
+What is next:
+- Pipeline: merge M1/M2/M3 worktrees and run the full suite; A2 and A6 need all three modules.
+- G3 e2e may drive ordering.html in a headless browser.
