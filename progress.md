@@ -27,3 +27,18 @@ What I did:
 What is next:
 - G2: build M1-ordering, M2-recipes, M3-reports in parallel, only inside the SPEC s2.4 file lists, against docs/CORE_API.md. Module unit tests go in tests/unit/<Module>/. Run one file with `php tests/run.php <substring>`.
 - Human housekeeping: the scratch folders C:\dev\hub-g1-proto and C:\dev\hub-g1-check (outside the repo) can be deleted.
+
+## 2026-10-06 - G2 BUILD M3-reports (done)
+What I did:
+- M3-01..M3-04 API (src/Modules/Reports/{routes,ReportController,ReportService,AdminListController}.php): GET /api/reports/finished-goods (JSON + format=csv), GET /api/admin/recipes, GET /api/admin/batches. Read-only, built from batch snapshots, hub scoped to own location (location_id ignored), hq all or ?location_id=, franchise 403, 401 before 403 before 422.
+- M3-05 UI: public/reports.html + public/assets/reports.js (date-range report with totals and CSV download, admin recipe list, admin batch list with filters; every value escaped).
+- tests/unit/Reports/reports_test.php (7 tests): inserts the s5.3 batch rows straight into the test DB (M2 is in another worktree) and checks totals 46/245.04/3 and 51/358.34/4, date range, 422s, CSV rows incl. TOTAL and formula guard, roles, admin lists.
+- 5 g2-M3 lines in DECISIONS-LOG.md.
+Evidence:
+- In this worktree: `php tests/run.php` -> RESULT: 25 passed, 19 failed. Smoke 18/18 and M3 unit 7/7 pass; all 19 acceptance failures are 404s on M1/M2 routes not in this lane.
+- Scratch copy outside the repo (C:\dev\hub-m3-scratch-187210) = this module + the G1 throwaway M1/M2 from C:\dev\hub-g1-proto: `php tests/run.php acceptance` -> RESULT: 19 passed, 0 failed (A1, A2, A5, A6 exercise M3 routes).
+- No LANE BREACH: no shared file needed changing.
+
+What is next:
+- Merge with the M1-ordering and M2-recipes branches; the pipeline runs the full suite.
+- Human housekeeping: delete C:\dev\hub-m3-scratch-187210 (the delete guard blocks agents from removing it).
