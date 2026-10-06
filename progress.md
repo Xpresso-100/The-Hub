@@ -85,3 +85,8 @@ What I did:
 What is next:
 - G4 verifier grades the build against SPEC.md.
 - Human: a manual browser pass on login -> ordering -> recipes -> reports. Scratch files under var/ (gitignored: var/e2e-serve.php, var/e2e-full-run.log, var/e2e-serve-url.txt, var/test/) can be deleted.
+## 2026-10-06 - G4 VERIFY (done)
+What I did:
+- Ran php tests/run.php: RESULT: 89 passed, 0 failed. Checked A1-A7, locked rules, secrets grep, dependency audit (none). Wrote .run/VERDICT.md: SHIP.
+What is next:
+- Human: manual browser pass on the UI.
