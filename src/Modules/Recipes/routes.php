@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Hub\Modules\Recipes\BatchController;
+use Hub\Modules\Recipes\InventoryController;
 use Hub\Modules\Recipes\RecipeController;
 
 // M2-recipes routes (SPEC s8).
@@ -12,4 +13,6 @@ return [
     ['PUT', '/api/recipes/{id}', [RecipeController::class, 'update']],
     ['POST', '/api/batches', [BatchController::class, 'create']],
     ['GET', '/api/batches/{id}', [BatchController::class, 'show']],
+    ['GET', '/api/inventory', [InventoryController::class, 'list']],
+    ['POST', '/api/inventory/adjustments', [InventoryController::class, 'adjust']],
 ];
