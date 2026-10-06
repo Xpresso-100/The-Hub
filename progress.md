@@ -27,3 +27,19 @@ What I did:
 What is next:
 - G2: build M1-ordering, M2-recipes, M3-reports in parallel, only inside the SPEC s2.4 file lists, against docs/CORE_API.md. Module unit tests go in tests/unit/<Module>/. Run one file with `php tests/run.php <substring>`.
 - Human housekeeping: the scratch folders C:\dev\hub-g1-proto and C:\dev\hub-g1-check (outside the repo) can be deleted.
+
+## 2026-10-06 - G2 BUILD M2-recipes (done, pending pipeline grading)
+What I did:
+- M2-01..M2-06 implemented, one commit each (M2-03 + M2-04 share one commit because they share BatchService), only inside the SPEC s2.4 M2 file list:
+  src/Modules/Recipes/{routes,RecipeController,RecipeService,BatchController,BatchService,InventoryController,InventoryService}.php,
+  public/recipes.html, public/assets/recipes.js, tests/unit/Recipes/*_test.php (5 files, 15 tests).
+- Recipes: list/detail with cost at current ingredient cost; create/edit (replace lines, deactivate), 409 duplicate finished_sku, 422 field errors.
+- Batches: hub-only POST, one transaction (snapshot lines, batches + batch_lines, -qty ledger rows reason batch), cost_per_item = round_half_up(total, qty), negative on-hand allowed and warned; GET scoped (hub own else 404, hq any).
+- Inventory: ledger sum per sku for every active ingredient; adjustments (reason adjustment, note = reason text); hub location_id ignored, hq must name a hub location.
+- UI: recipe list/editor, record batch with cost result and warnings, inventory + adjustment form; everything escaped (unit test scans recipes.js).
+- Local run of `php tests/run.php` in this worktree: RESULT 36 passed, 16 failed. Passing: smoke 18/18, M2 unit 15/15, A4 3/3. All 16 failures are 404s on M1/M3 routes (/api/orders, /api/ingredients, /api/stock, /api/reports/*, /api/admin/*), which are built in the other worktrees. No M2 test fails.
+- No LANE BREACH. No shared/frozen file or tests/acceptance edited. Nothing touches FinCon.
+- UI not driven in a browser: the Playwright tool permission was not granted in this session; covered by HTTP-level tests only.
+
+What is next:
+- Pipeline merges M1 + M2 + M3 and runs the full suite; A1, A2, A5, A6 exercise M2 routes together with M1/M3.
