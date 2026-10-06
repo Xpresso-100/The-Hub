@@ -1,2 +1,27 @@
-
 .run/
+
+# Secrets and local configuration - never committed (SPEC s2.2)
+.env
+.env.*
+!.env.example
+config.local.php
+
+# Runtime data: SQLite files, logs, test apps
+var/*
+!var/.htaccess
+*.sqlite
+*.sqlite3
+*.log
+
+# Dependencies (none today - the stack has no Composer/npm) and build output
+vendor/
+node_modules/
+build/
+dist/
+
+# Editor / OS noise
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+.DS_Store
