@@ -25,3 +25,6 @@ dist/
 *.swp
 Thumbs.db
 .DS_Store
+
+# Claude Code worktrees (save-ship install.ps1)
+.claude/worktrees/
