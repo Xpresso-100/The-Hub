@@ -12,7 +12,7 @@
 361  public/.htaccess
 1884  public/index.html
 1196  public/index.php
-2359  public/login.html
+2412  public/login.html
 2939  public/ordering.html
 4493  public/recipes.html
 3556  public/reports.html
