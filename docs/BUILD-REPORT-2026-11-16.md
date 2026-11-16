@@ -1,7 +1,7 @@
 # Build report: Hub live ops (warehouse queue, ingredient screen, accounts, Hub stock)
 
 FOR INFO, then two DECISIONS NEEDED from Damian: "merge" and then "ship" (see section 7).
-Spec: `docs/BUILD-SPEC-2026-11-16-live-ops.md` v1.1 · Branch `feat/hub-live-ops` · Run 16 Nov 2026, 09:15 to __END__ SAST, unattended · Coordinator: Claude Code (headless).
+Spec: `docs/BUILD-SPEC-2026-11-16-live-ops.md` v1.1 · Branch `feat/hub-live-ops` · Run 16 Nov 2026, 09:15 to 10:40 SAST (85 of 120 minutes), unattended · Coordinator: Claude Code (headless).
 
 **Summary**
 - All four lanes (A warehouse queue, B ingredient screen, C accounts, D Hub stock) are built, merged and pushed. Nothing was cut.
@@ -25,7 +25,7 @@ Spec: `docs/BUILD-SPEC-2026-11-16-live-ops.md` v1.1 · Branch `feat/hub-live-ops
 | G2 frozen files | `git diff --name-only main -- SPEC.md SPEC-locked-decisions.md tests/acceptance db src/Config.php src/Auth src/Money.php src/Http src/Modules/Ordering src/Modules/Recipes src/Modules/Reports src/Fincon bin deploy/sql` (plus the four v1.1 recipe/report pages) and `git diff --diff-filter=DM --name-only main -- tests` | both EMPTY | PASS (10:10) |
 | G3 full suite | `php tests/run.php` at 765fb97 | `RESULT: 130 passed, 0 failed` | PASS (10:11 to 10:23). 130 = 89 baseline + 41 new. Acceptance A1 to A7: 7 files, 19 tests, all PASS |
 | G4 audit | compliance-gate, given only the spec and `git diff main...feat/hub-live-ops` | PASS-WITH-FLAGS, 7 flags, nothing BLOCKED (section 4) | PASS (10:20) |
-| G5 final | G2 + G3 on the final code commit | __G5__ | __G5RESULT__ |
+| G5 final | G2 + G3 on the final code commit | at ebee5c2: G2 both diffs EMPTY, `main` still `1851d9d`; `RESULT: 130 passed, 0 failed`, acceptance 19/19 PASS | PASS (10:26 to 10:37). The only later commit changes this report file and nothing else |
 
 ## 2. Lane reports
 
@@ -90,7 +90,11 @@ None of these were fixed in this run: none is a BLOCKED item, and the spec allow
 1. **Merge:** read this report, then say "merge" to merge `feat/hub-live-ops` into `main`.
 2. **Ship:** after the merge, say "ship". You run `ship <Hub system name> -DryRun` then `ship <Hub system name>` in a normal PowerShell window. [Unverified] the Hub's system name and whether it is "active" in save-ship `registry.json`; this run could not read it. Expected change set: 15 new app files (`src/Modules/Warehouse/` 3, `src/Modules/Accounts/` 3, `public/` pages and assets 9) plus the changed `public/assets/app.js` and `public/index.html`. The branch also carries `deploy/upload/hub-bundle.zip` and `hub-upload.zip` from your base commit b17ef98, plus `CLAUDE.md`, the spec, the lane notes and this report; none of those should be uploaded to `public_html/hub/`. No database step.
 3. **Data:** load the real ingredient list with cost prices (spec section 13). Until then the Hub cannot order in production.
-4. **After ship:** the 10-minute browser check in spec section 11. Do not press "Mark delivered" on a test order.
+4. **After ship:** the 10-minute browser check in spec section 11. Do not press "Mark delivered" on a test order. Also open each new page once with the browser console open: no tool checked the JavaScript syntax (section 6).
+5. **Harness:** subagents had no Bash in this run. If the next unattended build should run lanes on their own, allow `php` and `git` for subagents scoped to `.claude/worktrees/`. This run could not write the `errors-log.md` row or record the agents' LEDGER lines: both live outside the repo, which this session may not write to.
+6. **Optional follow-up (not in this spec):** an `overflow-x:auto` wrapper on the ingredients and warehouse tables for 375 px phones, and amend spec section 8's "Give Nicole" wording to match the page.
+
+**Task board total:** 21 of 23 tasks at 100%. A1 and C1 are at 50% because their red run was not observed. Weighted by the estimated minutes: 210 of 215 = 98%.
 
 ## 8. Task board (spec section 15)
 
@@ -119,7 +123,7 @@ Percent = done criteria met / total for that task. Times are wall clock.
 | D2 | stock page table + location picker | tests 1, 2 | pass | 100 |
 | D3 | Stock count form | tests 3, 4 | pass | 100 |
 | N1 | Menu and tiles + nav test | nav test passes | red then green | 100 |
-| N2 | Merge lanes, decisions log, report | G2, G3, G5 pass | __N2__ | __N2P__ |
+| N2 | Merge lanes, decisions log, report | G2, G3, G5 pass | G2, G3, G5 all PASS; lanes merged; 33 decision lines; report written | 100 |
 | V1 | Clean-context audit | verdict written | PASS-WITH-FLAGS written (section 4) | 100 |
 
 Note on "fails for the right reason" (A1, C1): with no shell, builders wrote tests and code before the Coordinator's first run, so the red run of A1 and C1 was never observed. Both tests exist and pass, but the "fails for the right reason" half is unproven, so each scores 50.
