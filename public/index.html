@@ -22,8 +22,10 @@
       var TILES = [
         { href: 'ordering.html', title: 'Stock & ordering', text: 'FinCon stock status, order ingredients from HQ at cost, order history.', roles: ['hq', 'hub'] },
         { href: 'ordering.html', title: 'Stock status', text: 'FinCon stock status (in stock / low / out).', roles: ['franchise'] },
-        { href: 'recipes.html', title: 'Recipes & batches', text: 'Recipes, record a production batch, ingredient inventory.', roles: ['hq', 'hub'] },
-        { href: 'reports.html', title: 'Reports', text: 'Finished goods for HQ, recipe and batch lists.', roles: ['hq', 'hub'] }
+        { href: 'stock.html', title: 'Hub stock', text: 'What the Hub has on hand, and record a stock count.', roles: ['hq', 'hub'] },
+        { href: 'warehouse.html', title: 'Warehouse queue', text: 'Every open Hub order and what to pull from the warehouse.', roles: ['hq'] },
+        { href: 'ingredients.html', title: 'Ingredients', text: 'Add ingredients, set cost prices, switch ingredients on or off.', roles: ['hq'] },
+        { href: 'accounts.html', title: 'Accounts', text: 'Create Hub and head office logins, switch them on or off.', roles: ['hq'] }
       ];
       Hub.me().then(function (user) {
         Hub.renderNav(user);
