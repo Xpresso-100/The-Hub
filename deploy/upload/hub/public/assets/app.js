@@ -97,8 +97,10 @@
   var LINKS = [
     { href: 'index.html', label: 'Home', roles: ['hq', 'hub', 'franchise'] },
     { href: 'ordering.html', label: 'Stock & ordering', roles: ['hq', 'hub', 'franchise'] },
-    { href: 'recipes.html', label: 'Recipes & batches', roles: ['hq', 'hub'] },
-    { href: 'reports.html', label: 'Reports', roles: ['hq', 'hub'] }
+    { href: 'stock.html', label: 'Hub stock', roles: ['hq', 'hub'] },
+    { href: 'warehouse.html', label: 'Warehouse queue', roles: ['hq'] },
+    { href: 'ingredients.html', label: 'Ingredients', roles: ['hq'] },
+    { href: 'accounts.html', label: 'Accounts', roles: ['hq'] }
   ];
 
   function renderNav(user) {

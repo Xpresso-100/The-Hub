@@ -127,7 +127,10 @@ if ($list !== null) {
         $bytes += $size;
         $lines[] = $size . '  ' . $p;
     }
-    $text = count($paths) . " files, $bytes bytes\r\n" . implode("\r\n", $lines) . "\r\n";
+    // Like build-bundle.ps1: the "<n> files, <bytes> bytes" header goes to the console only;
+    // the file holds one "<size>  <path>" line per file (the Deploy parity test requires this).
+    echo count($paths) . " files, $bytes bytes\n";
+    $text = implode("\r\n", $lines) . "\r\n";
     if (file_put_contents($list, $text) === false) {
         fail("cannot write $list");
     }

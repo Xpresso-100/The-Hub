@@ -1,0 +1,43 @@
+/* The Hub - warehouse queue page. Uses the app.css tokens only; no colour thresholds (none set by the business). */
+
+.wh-counts { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+.wh-count {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 14px;
+  min-width: 140px;
+  background: var(--bg);
+}
+.wh-count strong { display: block; font-size: 24px; line-height: 1.2; color: var(--ink); }
+.wh-count span { color: var(--muted); font-size: 13px; }
+
+.wh-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+
+.wh-order h2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.wh-order dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0 0 10px; }
+.wh-order dt { color: var(--muted); }
+.wh-order dd { margin: 0; overflow-wrap: anywhere; }
+.wh-status { font-weight: 600; }
+.wh-age { color: var(--muted); font-weight: normal; font-size: 14px; }
+.wh-next { margin: 10px 0 0; }
+.wh-empty { text-align: center; color: var(--muted); }
+
+@media (max-width: 480px) {
+  main { padding: 0 12px; }
+  .wh-count { min-width: 0; flex: 1 1 40%; }
+  .wh-order dl { grid-template-columns: 1fr; }
+  .wh-next button { width: 100%; }
+}
+
+@media print {
+  #hub-nav,
+  header.hub-header nav,
+  button,
+  .wh-actions,
+  .wh-next,
+  #queue-message { display: none !important; }
+  body { background: var(--card); }
+  main { max-width: none; margin: 0; padding: 0; }
+  .card { border: 0; padding: 0; margin-bottom: 12px; }
+  .wh-order { break-inside: avoid; }
+}
