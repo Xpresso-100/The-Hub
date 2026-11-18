@@ -39,7 +39,11 @@ Finish the Hub go-live build: sync the upload copy (A3b), prove the journey end 
 
 - V1 live-verifier round 1: FAIL on 50380d9 (fresh worktree gets CRLF files from system core.autocrlf=true, no .gitattributes; committed FILE-LIST.txt sizes came from the mixed CRLF/LF main tree, so the Deploy parity size check failed: 5 passed, 1 failed; suite 162-163 passed, 1-2 failed). Everything else matched: node-check 8/0, browser repo 7/0, bundle 7/0, 0 D lines, frozen diff empty. Cause is environment/test-data, not product code. FIX (Coordinator, not frozen): added `.gitattributes` (`* text=auto eol=lf`, commit 4f7af2f; renormalize changed no tracked file), regenerated FILE-LIST.txt in a pure LF worktree with sync-bundle (golive-V1b, merged 278e08a), normalised the main working tree's 135 CRLF files to LF (content-preserving, git sees no diff). Deploy: `RESULT: 6 passed, 0 failed` in main and in the LF worktree. Re-running V1 fresh.
 
+- V1 round 2 (fresh LF checkout ebf9861, independent): PASS; Deploy 6/0, node 8 clean, browser repo 7/0, bundle 7/0, full suite 164/0; 0 D lines; frozen diff empty.
+- FINAL PROOF on 6804f27 (code identical to 50380d9 plus .gitattributes and FILE-LIST): `php tests/run.php` ends `RESULT: 164 passed, 0 failed`; `node tests/browser/run.cjs --root bundle` ends `BROWSER: 7 passed, 0 failed`. FINAL report: docs/BUILD-REPORT-2026-11-18.md.
+
 ## Blocked log
+- P1 push: BLOCKED by guard (DEPLOY-GATE), final. Branch is committed locally only. Push by hand.
 - V3 cost report: NOT COMPUTED. trace-cost-analyst could not write a scratch script (READONLY-GUARD, final). No token/time/model-mix figures exist; none are claimed. Operator can run the aggregation from a non-read-only session (filter timestamps >= 2026-11-18T14:30Z, sum message.usage).
 - Red-team could not run the security-review skill (not invocable) and worked in its own worktree (commit 2baaf37 on branch worktree-agent-a7587b12345fa60cf, not merged).
 - (append rows: item · two attempts · evidence)
