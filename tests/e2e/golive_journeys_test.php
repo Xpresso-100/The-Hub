@@ -346,4 +346,29 @@ test('J9: a deactivated user\'s token stops working', function (): void {
     assert_success($app->request('GET', '/api/me', null, $otherToken), 200, 'another user\'s token is unaffected');
 });
 
+test('J2b: a hub user cannot list inactive ingredients with include_inactive=1; hq can', function (): void {
+    [$app, $hq, $token] = gl_app(true);
+
+    // Non-vacuous: hq with include_inactive=1 sees the inactive unpriced line and the switched-off samples.
+    $all = hub_list($hq->get('/api/ingredients?include_inactive=1'), 'ingredients', 'hq ingredients incl. inactive');
+    $inactive = array_values(array_map(
+        static fn (array $i): string => (string) $i['sku'],
+        array_filter($all, static fn (array $i): bool => ($i['active'] ?? null) === false)
+    ));
+    assert_true(in_array('E2E004', $inactive, true), 'hq sees inactive E2E004 with include_inactive=1; inactive seen: ' . implode(',', $inactive));
+    assert_true(count($inactive) >= 2, 'hq sees more than one inactive sku; found ' . count($inactive));
+
+    // SPEC s7.2: hq only may add include_inactive. A hub user either gets 403 or a list with no inactive sku.
+    $r = $app->request('GET', '/api/ingredients?include_inactive=1', null, $token);
+    if ($r->status !== 403) {
+        assert_success($r, 200, 'hub GET /api/ingredients?include_inactive=1');
+        $list = hub_list($r, 'ingredients', 'hub ingredients with include_inactive=1');
+        $leaked = array_values(array_intersect(hub_column($list, 'sku'), $inactive));
+        assert_same([], $leaked, 'hub list contains no inactive sku');
+        foreach ($list as $item) {
+            assert_same(true, $item['active'] ?? null, (string) $item['sku'] . ' is active in the hub list');
+        }
+    }
+});
+
 run_tests();
