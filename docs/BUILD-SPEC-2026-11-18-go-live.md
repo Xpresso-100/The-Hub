@@ -1,10 +1,10 @@
-# BUILD SPEC v2: Hub go-live, full build and end-to-end proof
+# BUILD SPEC v3.1: Hub go-live, finish the build overnight in an interactive Claude Code session
 
-FOR INFO: launched unattended at Damian's "go" (18 Nov 2026, 15:33). DECISIONS NEEDED from Damian afterwards: "merge", then "ship".
+FOR INFO: night run from 18 Nov 2026 about 16:00 until done or 07:30 on 19 Nov. DECISIONS NEEDED from Damian in the morning: "merge", then "ship".
 
-Version 2.1 · 18 Nov 2026 · Data as at 18 Nov 2026 15:35 SAST (read from the laptop and the live site in chat) · Supersedes v2.0 and v1.0 of the same date · DRAFT, not verified
+Version 3.1 · 18 Nov 2026 · Data as at 18 Nov 2026 16:29 SAST (read from the laptop in chat) · Supersedes v3.0, v2.1, v2.0 and v1.0 of the same date · Adds the Claude Code Field Guide v4 (6 Nov 2026) disciplines · DRAFT, not verified
 
-Repo: `Xpresso-100/The-Hub` · local `C:\dev\The-Hub` · base `feat/hub-live-ops` at `c9bddf7` · run branch `feat/hub-live-ops-golive` · `main` at `1851d9d`
+Repo: `Xpresso-100/The-Hub` · local `C:\dev\The-Hub` · run branch `feat/hub-live-ops-golive`, continuing from `fa9bd5f` (the 15:34 run, which stopped by itself at 16:19) · `main` at `1851d9d` · supervisor in `C:\dev\_runs\hub-night\`
 
 ---
 
@@ -18,6 +18,138 @@ The run does five things:
 3. It fixes the phone layout.
 4. It proves the whole Hub journey end to end, twice: through the API, and through a real browser. The browser test runs against the code, and again against the exact upload copy.
 5. It fixes every bug the tests find in non-frozen code, and reports any bug found in frozen code as a decision for Damian.
+
+## 0.00 v3.1: where the build stands and what is left (read this first)
+
+**State at 16:29, from `docs/run/STATUS.md` and `git log`:**
+- **Green:** W0.1–W0.4, A1 (on branch `golive-A1`, commit `3613f39`; its merge was reverted in `c8d937e`), A2, B1–B4, C1–C3 (HubListLoader 11/0), E1 (J1–J9 9/0), E2.0–E2.2 (`BROWSER: 7 passed, 0 failed` on the repo), F1, N2, G2.
+- **Not finished:**
+  - M2: full suite + browser on the merged branch;
+  - R1–R4: reviews, restart each one;
+  - A3: rebuild the upload copy, blocked;
+  - E3: browser on the bundle, blocked by A3;
+  - F*: fix loop;
+  - G3, V1–V3;
+  - P1: **the run branch has never been pushed**;
+  - the FINAL report and `docs/run/DONE`.
+
+**A3 is blocked by your own guard, so it is replaced.** `guard.ps1` [DESTRUCTIVE-GUARD] blocks `git rm -r` (ENFORCED). Do not try to get around the guard. New task **A3b** (general-purpose builder, its own worktree):
+1. Write `deploy/sync-bundle.php`. It copies `public/`, `src/`, `db/` and `bin/` into `deploy/upload/hub/`, overwriting files, and copies `var/.htaccess`, `htaccess-root.txt` → `.htaccess` and `config.local.php.TEMPLATE`, exactly as `deploy/build-bundle.ps1` does.
+2. It never deletes anything. If a file exists in the bundle but not in the source, it prints `EXTRA <path>` and exits 1.
+3. It rewrites `deploy/FILE-LIST.txt` in the same format as `build-bundle.ps1`: the first line is `<n> files, <bytes> bytes`, then one `<size>  <path>` line per file, ASCII.
+4. It never copies `config.local.php`, `.env`, `tests/`, or the browser test's scratch database.
+
+Then the Coordinator:
+1. Restores A1's test by reverting the revert (`git revert --no-edit c8d937e`).
+2. Runs `php deploy/sync-bundle.php`, then `php tests/run.php Deploy`. Expect all parity checks green.
+3. Commits, and writes the A/M/D change set to the report.
+4. Has context-curator amend the N2 line in `CLAUDE.md` to say "run php deploy/sync-bundle.php" instead of "git rm".
+
+**R0 in v3.1 never deletes anything.** For a task left half done, leave its old worktree and branch where they are, start a fresh worktree `.claude/worktrees/<id>-r<n>` on branch `golive-<id>-r<n>`, and note the old one in STATUS.md as "abandoned, not deleted". The `git worktree remove --force` and `git branch -D` steps in §0.0 are withdrawn, because the destructive guard blocks them.
+
+**Push early.** Push `feat/hub-live-ops-golive` as the first git action of this session, then after every merge.
+
+**Commands from the Claude Code Field Guide v4 (6 Nov 2026) that agents use in this run.** Only agent-callable skills are listed. The Guide's 16 think-and-challenge commands and `/overnight`, `/handoff` and `/ship` are user-only (disable-model-invocation), so agents never call them.
+
+| Who | Command (skill) | When |
+|---|---|---|
+| Coordinator | `superpowers:subagent-driven-development` | the dispatch pattern for every task card: a fresh implementer per task, then a review |
+| Coordinator | `superpowers:using-git-worktrees` | before every task card, to create the worktree |
+| Coordinator | `context-budget` | at 50% context, and when the same fix fails twice: mask old output, compact with a Preserve/Drop line, log in OVERNIGHT.md |
+| Coordinator | `graph-engineering` | once, at the start: narrate `[GRAPH DECISION]` for the remaining work |
+| Coordinator | `loop-engineering` | if a loop stalls (two strikes), before routing to loop-strategist |
+| Coordinator | `harness-engineering` | if a guard blocks a legitimate step twice: harness-engineer writes a proposal in its own worktree; it never edits `~/.claude` in this run |
+| Builders | `superpowers:test-driven-development` | every task: failing test first, watch it fail, then code |
+| Builders (fix cards) | `superpowers:systematic-debugging` | every F* card: root cause before any fix |
+| Every agent | `superpowers:verification-before-completion` | before returning STATUS=DONE: run the DONE WHEN command fresh and paste its last line |
+| Reviewers | `superpowers:requesting-code-review` / `superpowers:receiving-code-review` | wave 3, and when a builder handles findings |
+| compliance-gate | `verify-gate` | V2: deterministic checks, then the path taken, then judgement; read-only |
+| red-team | `security-review` (built in), if it can be invoked; otherwise its own review | R3, a first pass on the branch diff |
+| Any agent touching MySQL-facing code | `mysql-patterns` | only if a query changes |
+
+**Not used tonight** (Guide warnings):
+- `/batch`: the pieces are not uniform.
+- `/autofix-pr` and `claude-mem:babysit`: there is no PR, and running two watchers on one PR clashes.
+- `superpowers:finishing-a-development-branch`: it waits for a person.
+- `/claude-security`: not installed as at 6 Nov.
+- `playwright-cli` skill: switched off; `tests/browser/run.cjs` is the browser check.
+- `/godmode` and `/silent`: they strip labels and proof.
+
+**Proof command (the finish line):** `php tests/run.php` ends `RESULT: <n> passed, 0 failed` **and** `node tests/browser/run.cjs --root bundle` ends `BROWSER: 7 passed, 0 failed`. Create `docs/run/DONE` only after both pass on the final commit and the FINAL report is pushed.
+
+## 0.0 v3 night rules: why runs stopped before, and what stops that now
+
+**Why past night runs stopped halfway (read on the laptop, 18 Nov):**
+- No hook on the laptop caps turns or iterations. The only stops in the harness are the `AGENT_STOP` kill switch (guard-v5.ps1) and the Stop verify gate. Claude Code overrides the Stop gate after 8 blocks in a row.
+- The stops you saw ("reached its limit, resets 2:18") match Claude plan usage limits:
+  - a rolling 5-hour session limit and a 7-day weekly limit;
+  - a separate Opus-only limit;
+  - the message names the limit and its reset time, for example "You've hit your session limit · resets 3:45pm". (Web sources dated 2026; [STALE REFERENCE RISK].)
+- A single `claude -p` session also ends whenever the Coordinator decides it has finished, and nothing restarted it.
+
+**What stops that now:**
+
+1. **Supervisor (ENFORCED by a script, not a prompt).** `C:\dev\_runs\hub-night\night.ps1` runs `claude -p` sessions one after another until one of these is true:
+   - **(a)** `docs/run/DONE` exists *and* the supervisor's own run of `php tests/run.php` ends with `0 failed`;
+   - **(b)** it is 07:30 on 19 Nov;
+   - **(c)** `AGENT_STOP` exists;
+   - **(d)** 3 sessions in a row add no commit to the run branch (logged as NEEDS-ME);
+   - **(e)** 25 sessions have run.
+
+   After each session it reads only the final `result` record of that session's log and acts on it:
+
+   | Session ended with | Supervisor does |
+   |---|---|
+   | "hit your session limit · resets <time>" | sleeps until the reset time + 3 minutes, then relaunches |
+   | "hit your Opus limit" | relaunches at once in Sonnet-only mode (all reviewers on Sonnet) until the Opus reset time |
+   | "hit your weekly limit" with a reset after 07:30 | stops and logs NEEDS-ME |
+   | rate limit, overload or server error | waits 5 minutes, relaunches |
+   | a normal end without DONE (the agent quit early) | relaunches at once with the resume prompt |
+   | a session still running after 5 hours | killed and relaunched |
+
+2. **Durable state, so any session can pick up where the last one stopped:**
+   - `docs/run/OVERNIGHT.md` holds the goal, the proof command, the do-not-touch list, and three logs: Done / Blocked / Needs me.
+   - `docs/run/STATUS.md` holds the task board.
+   - The Coordinator commits both after every task and pushes after every merge.
+   - Every restart begins with **R0** (below), not from memory.
+
+3. **R0, the resume step (the first thing every relaunched session does):**
+   - Read OVERNIGHT.md, STATUS.md and `git log --oneline -15`.
+   - For every task marked running: if its branch has commits and its DONE WHEN command passes, mark it green and merge it. Otherwise run `git worktree remove --force .claude/worktrees/<id>` and `git branch -D golive-<id>`, then start that task again.
+   - Then continue with the next wave.
+
+4. **Usage economy, so limits come later and hurt less:**
+   - The Coordinator runs on **Sonnet** (`--model claude-sonnet-5-5`).
+   - Opus goes only to ledger, reality-checker, red-team, popia-data-protection, live-verifier and compliance-gate, once each per review round.
+   - **At most 3 builders at once.**
+   - Lane tests during the build; the full suite (about 11 minutes) only at gates.
+   - Task cards (§8) instead of re-reading files.
+   - Compact at 50% context with a Preserve/Drop line.
+   - In Sonnet-only mode, pass `model: sonnet` when dispatching reviewers.
+
+5. **Field Guide v4 checks applied to this run** (Guide's "Before you press enter" list):
+
+| Check | How this run answers it |
+|---|---|
+| Which business | Xpresso Cafe, Hub production kitchen |
+| Brief confirmed | yes: this spec, from Damian's instructions on 16 and 18 Nov |
+| One command that proves it works | `php tests/run.php` ends `0 failed` (the supervisor runs it itself), plus `node tests/browser/run.cjs --root bundle` |
+| Round cap and "nothing changed" stop | two strikes per task (§11); the supervisor's stop (d); 25 sessions max |
+| Own worktree and branch, no reset --hard | §0.1 rule 3; `reset --hard`, `stash` and `clean` are denied (ENFORCED) |
+| Merge and ship wait for Damian's yes | push to main denied (ENFORCED); merge and deploy INSTRUCTED; no ssh, so no deploy is possible (ENFORCED) |
+| Deploy block, no credentials in chat | §13: `ship hub -DryRun`, then `ship hub`, attended; no credentials anywhere in this spec |
+| Reviewer is not the builder | wave 3 reviewers and live-verifier use fresh contexts and never wrote the code |
+| Each gate labelled ENFORCED or INSTRUCTED | §7 and this section |
+| New repo, Bench gate | no new repo or package is installed in this run; `npm` and `npx` are denied |
+| Scraping or personal data | none; fixture names and fixture prices only |
+| User-only commands | not used: agents cannot run /overnight, /premortem or /assumptions (the Guide notes disable-model-invocation). The supervisor and §0.0 stand in for /overnight. |
+| /ship vs ship SYSTEM | no agent runs either. `ship hub` is Damian's own PowerShell command, typed by him. |
+
+Field Guide pitfalls this run guards against:
+- a loop with no verify command (the supervisor runs the proof itself);
+- the builder reviewing its own work;
+- trusting a gate that is only written in a prompt (every gate above is labelled);
+- /clear before writing decisions down (state is committed after every task).
 
 ## 0.1 v2.1 rules (these override anything below that disagrees)
 
@@ -35,8 +167,8 @@ The run does five things:
    - **Phase 1, ship-ready checkpoint CP1, as early as possible:** waves 0–2, then A3 (rebuild the upload copy), G2 (frozen files) and the full `php tests/run.php` green. Push, then write and push `docs/BUILD-REPORT-2026-11-18.md` marked **INTERIM: ship-ready** with the server change set. This is what Damian can merge and ship from.
    - **Phase 2, continuing overnight:** browser E2 and E3, wave 3 reviews, the §11 fix loop, V1–V3, then overwrite the report as **FINAL** and push.
    - Push after every merge, so GitHub always has the latest green state.
-5. **Stop conditions.** Stop when all §1 criteria are met. Otherwise stop at 9 h 30 min of run time, or when every open item is BLOCKED under the two-strike rule. Either way, write the FINAL report with what is done. Never leave the branch red: if the last merge breaks the suite, revert that merge (`git revert -m 1`), then report.
-6. **Concurrency.** At most 4 builders at once. Reviewers run after builders, not alongside.
+5. **Stop conditions (Coordinator side).** When all §1 criteria are met, write the FINAL report, create `docs/run/DONE`, commit and push. If every open item is BLOCKED under the two-strike rule, write the FINAL report with the BLOCKED list, create `docs/run/DONE`, commit and push. Never create DONE while any task is runnable. The supervisor handles time limits and restarts; the Coordinator never stops just because a session has run long. Never leave the branch red: if the last merge breaks the suite, revert that merge (`git revert -m 1`), then report.
+6. **Concurrency.** At most 3 builders at once (v3). Reviewers run after builders, not alongside.
 
 ## 1. Done criteria
 
@@ -468,27 +600,22 @@ To watch the run from anywhere: `git log origin/feat/hub-live-ops-golive` after 
 
 ---
 
-## Appendix A: launcher `%TEMP%\hub-golive\run.ps1`
+## Appendix A: supervisor and prompts (in `C:\dev\_runs\hub-night\`)
 
-```powershell
-$d = "$env:TEMP\hub-golive"
-Set-Location C:\dev\The-Hub
-$env:NODE_PATH = "$env:APPDATA\npm\node_modules"
-# keep the laptop awake while the run lasts (released when this script ends)
-Add-Type -Name P -Namespace W -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint f);'
-[W.P]::SetThreadExecutionState([uint32]2147483649) | Out-Null
-"started $(Get-Date -Format s)" | Set-Content "$d\status.txt"
-$p = Start-Process -FilePath "cmd.exe" -ArgumentList "/c claude.cmd -p --verbose --output-format stream-json --permission-mode acceptEdits --settings $d\settings.json" -RedirectStandardInput "$d\prompt.txt" -RedirectStandardOutput "$d\log.jsonl" -RedirectStandardError "$d\err.txt" -PassThru -WindowStyle Hidden
-"claude launcher pid $($p.Id)" | Add-Content "$d\status.txt"
-if (-not $p.WaitForExit(36000000)) {
-  taskkill /PID $p.Id /T /F | Out-Null
-  "TIMEOUT after 10 h, killed $(Get-Date -Format s)" | Add-Content "$d\status.txt"
-} else { "finished exit=$($p.ExitCode) $(Get-Date -Format s)" | Add-Content "$d\status.txt" }
-```
+| File | Job |
+|---|---|
+| `start.ps1` | Damian runs this once. It stops the 15:34 run if it is still alive, then starts `night.ps1` hidden. |
+| `night.ps1` | The §0.0 supervisor loop. It keeps the laptop awake, writes `supervisor.log`, and keeps one `session-<n>.jsonl` per session. |
+| `prompt-first.txt` | First session: "Run R0, then continue the spec from where STATUS.md says." |
+| `prompt-resume.txt` | Every later session: the same, plus why the last session ended. |
+| `settings.json` | Appendix B. |
 
-**Prompt (`prompt.txt`):**
+To watch the run:
+- `C:\dev\_runs\hub-night\supervisor.log` (one line per session: start, end, reason, wait);
+- `docs/run/STATUS.md`;
+- `git log origin/feat/hub-live-ops-golive`.
 
-> You are the Coordinator of an unattended, fully autonomous build in C:\dev\The-Hub. Nobody will answer questions or approve anything. Read CLAUDE.md, then docs/BUILD-SPEC-2026-11-18-go-live.md (v2.1, placed in the repo before launch, uncommitted). §0.1 overrides the rest. You alone split work, write §8 task cards, assign the agents named in §6, and merge. Give every task card its own worktree and branch. Run at most 4 builders at once, and call on-call agents only through decision-gate. Reach checkpoint CP1 (ship-ready, pushed, INTERIM report) as early as possible, then continue with Phase 2 until §0.1 rule 5 stops you. Never merge to main, never deploy, never edit frozen files, never retry a denied command with a variant, never use real names or prices, never leave the branch red. If a subagent has no Bash, it writes files only and you run its commands. Keep docs/run/STATUS.md current. Your last message is the FINAL report summary.
+To stop it: create an empty file named `AGENT_STOP` in `C:\Users\damia\.claude\`. The guard blocks every tool at once, and the supervisor sees the file and exits.
 
 ## Appendix B: `%TEMP%\hub-golive\settings.json`
 
@@ -503,7 +630,7 @@ if (-not $p.WaitForExit(36000000)) {
       "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git add:*)", "Bash(git commit:*)",
       "Bash(git branch:*)", "Bash(git checkout:*)", "Bash(git switch:*)", "Bash(git worktree:*)",
       "Bash(git merge:*)", "Bash(git rev-parse:*)", "Bash(git show:*)", "Bash(git ls-files:*)", "Bash(git mv:*)",
-      "Bash(git rm -r -q deploy/upload/hub)",
+      "Bash(git rm -r -q deploy/upload/hub)", "Bash(git worktree remove --force .claude/worktrees/:*)", "Bash(git branch -D golive-:*)", "Bash(git revert:*)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/build-bundle.ps1)",
       "Bash(git push -u origin feat/hub-live-ops-golive)", "Bash(git push origin feat/hub-live-ops-golive)",
       "Bash(ls:*)", "Bash(cat:*)", "Bash(grep:*)", "Bash(wc:*)", "Bash(head:*)", "Bash(tail:*)",
@@ -511,7 +638,7 @@ if (-not $p.WaitForExit(36000000)) {
     ],
     "deny": [
       "Bash(git push origin main:*)", "Bash(git push --force:*)", "Bash(git push -f:*)",
-      "Bash(git reset --hard:*)", "Bash(git stash:*)", "Bash(git clean:*)", "Bash(git merge main:*)",
+      "Bash(git reset --hard:*)", "Bash(git stash:*)", "Bash(git clean:*)", "Bash(git merge main:*)", "Bash(git branch -D main:*)", "Bash(git branch -D feat/hub-live-ops:*)", "Bash(git branch -d main:*)",
       "Bash(ssh:*)", "Bash(scp:*)", "Bash(rm -rf:*)", "Bash(curl:*)", "Bash(wget:*)", "Bash(npm:*)", "Bash(npx:*)",
       "Read(./.env)", "Read(./config.local.php)", "Read(./deploy/upload/hub/config.local.php)"
     ]
