@@ -313,7 +313,10 @@ test('J8: a franchise user gets 403 on warehouse and admin endpoints; cancel wor
     assert_error($fr->get('/api/admin/locations'), 403, 'FORBIDDEN', 'franchise GET /api/admin/locations');
     assert_error($fr->put('/api/admin/ingredients/E2E-NOPE', ['name' => 'Test Nope', 'unit' => 'kg', 'cost_price' => 1.0, 'fincon_item_no' => null, 'active' => true]), 403, 'FORBIDDEN', 'franchise PUT /api/admin/ingredients/{sku}');
 
-    $orderId = gl_order($app, $token, [['sku' => 'E2E002', 'qty' => 4]])['id'];
+    $j8Order = gl_order($app, $token, [['sku' => 'E2E002', 'qty' => 4]]);
+    $orderId = $j8Order['id'];
+    // 4 kg = 4000 milli x 350 c = 1 400 000 / 1000 = 1400 c exactly = R14.00, excl. VAT.
+    assert_money(14.00, $j8Order['total'] ?? null, 'J8 order total (4 kg x R3.50, excl. VAT = 1400 cents)');
     assert_error($fr->patch('/api/orders/' . $orderId . '/status', ['status' => 'cancelled']), 403, 'FORBIDDEN', 'franchise cancel');
     assert_error($app->request('PATCH', '/api/orders/' . $orderId . '/status', ['status' => 'cancelled'], $token), 403, 'FORBIDDEN', 'hub cannot cancel either');
 
