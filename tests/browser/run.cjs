@@ -516,6 +516,21 @@ async function main() {
     });
 
     await check('W7', 'at 375 x 812 the four pages have no page-level sideways scroll', async function () {
+      // W6 delivered the only order, so the warehouse page would be measured empty. Place a
+      // fresh order as the hub user first, so the pick-list table and an order card are on the page.
+      ok(s.hubPage, 'W4 did not open the hub context');
+      const hubP = s.hubPage;
+      await hubP.goto(base + '/ordering.html');
+      await hubP.locator('#ingredient-body tr').first().waitFor();
+      await hubP.locator('#ingredient-body tr', { hasText: 'SMP001' }).locator('input').fill('10');
+      await hubP.click('#order-submit');
+      await hubP.waitForFunction(function () {
+        const m = document.getElementById('order-message');
+        return !!m && /placed/.test(m.textContent);
+      });
+      const placed = /Order #(\d+) placed/.exec(await hubP.textContent('#order-message'));
+      ok(placed !== null, 'W7 could not place the order that fills the warehouse page');
+
       const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
       ctx.setDefaultTimeout(15000);
       watch(ctx, 'phone');
@@ -525,6 +540,12 @@ async function main() {
       for (const name of ['warehouse.html', 'ingredients.html', 'accounts.html', 'stock.html']) {
         await openPage(p, base, name);
         await p.waitForLoadState('networkidle');
+        if (name === 'warehouse.html') {
+          const card = p.locator('.wh-order', { hasText: 'Order #' + placed[1] + ' -' });
+          await card.waitFor();
+          ok(await card.locator('table').count() === 1, 'W7: the order card has no table on the warehouse page');
+          ok(await p.locator('#picklist-body tr').count() >= 1, 'W7: the pick-list table has no rows on the warehouse page');
+        }
         const w = await p.evaluate(function () { return document.documentElement.scrollWidth; });
         if (!(w <= 375)) {
           wide.push(name + ' scrollWidth=' + w);
