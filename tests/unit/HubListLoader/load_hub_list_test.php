@@ -340,4 +340,22 @@ test('C-usage: usage errors exit 2; bad header, header only and missing file exi
     assert_same('load_hub_list: 1 active, 0 off, 0 kept, 0 samples off', hll_last_line($out), 'final line');
 });
 
+test('C-11: a cost above 2147483647 cents per unit is rejected; nothing written; exit 1; the problem names the line', function (): void {
+    $app = TestApp::start();
+    $before = hll_table($app);
+    $csv = HLL_HEADER . "\n"
+        . "TST070,Test Good Row,kg,1,10.00,\n"
+        . "TST071,Test Overflow,kg,0.001,25000.00,\n";
+    [$code, $out] = hll_load($app, $csv);
+    assert_same(1, $code, 'exit code; output: ' . $out);
+    assert_true(
+        str_contains($out, 'line 3: cost per kg R25 000 000.00 is above the maximum R21 474 836.47'),
+        'overflow reported on line 3 with both amounts: ' . $out
+    );
+    assert_true(!str_contains($out, 'line 2:'), 'good row not reported: ' . $out);
+    assert_true(str_contains($out, 'Nothing changed.'), 'says nothing changed: ' . $out);
+    assert_true(!str_contains($out, 'load_hub_list: '), 'no success summary: ' . $out);
+    assert_same($before, hll_table($app), 'ingredients table unchanged (good row not written either)');
+});
+
 run_tests();
