@@ -28,3 +28,6 @@ Thumbs.db
 
 # Claude Code worktrees (save-ship install.ps1)
 .claude/worktrees/
+
+# Stop verify-gate counters (per session, local only)
+.claude/verify-gate-*.count
