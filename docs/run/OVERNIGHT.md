@@ -21,7 +21,10 @@ Finish the Hub go-live build: sync the upload copy (A3b), prove the journey end 
 - Left-over half-done tasks: new worktree `<id>-r2`; old one noted "abandoned, not deleted".
 
 ## Done log
-- (append rows: time · item · evidence)
+- M2: `RESULT: 154 passed, 0 failed`; `BROWSER: 7 passed, 0 failed` (repo).
+- A3b: deploy/sync-bundle.php (golive-A3b, merged); parity test restored (revert of c8d937e); sync copied 81 files, 0 extra; `php tests/run.php Deploy` = `RESULT: 6 passed, 0 failed`; server change set vs main: 16 A, 3 M, 0 D (commit 32abe48).
+- E3: `node tests/browser/run.cjs --root bundle` = `BROWSER: 7 passed, 0 failed`.
+- Deviation: spec A3b item 3 asks for a header line in FILE-LIST.txt, but the frozen parity test requires every line to be `<size>  <path>`; header goes to the console only (as build-bundle.ps1 does).
 
 ## Blocked log
 - (append rows: item · two attempts · evidence)

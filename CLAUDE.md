@@ -36,4 +36,4 @@ Last reviewed 16 Nov 2026. This repo is ONE business: The Hub app for Xpresso Ca
 - Files go to `public_html/hub/` on xneelo; the app is at `https://xpressocafe.co.za/hub/public/`.
 - A database change is the exception, not the rule: back up first, one statement at a time in phpMyAdmin, per `deploy/DEPLOY.md`.
 - After any deploy, check `/api/health`, a login, and that private files answer 403.
-- Any change under public/, src/, db/ or bin/ ships only after `deploy/upload/hub` is rebuilt (git rm -r the folder, run deploy/build-bundle.ps1) and the Deploy parity test passes.
+- Any change under public/, src/, db/ or bin/ ships only after `deploy/upload/hub` is synced (run `php deploy/sync-bundle.php`: it copies and never deletes; it prints EXTRA and exits 1 if the bundle holds a file with no source) and the Deploy parity test passes.
