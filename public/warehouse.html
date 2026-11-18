@@ -24,10 +24,11 @@
     <section class="card" id="picklist-card">
       <h2>To pull now</h2>
       <p class="muted">Everything waiting or being picked, added up per item. Orders already out for delivery are not included.</p>
-      <table>
+      <p class="wh-empty" id="queue-empty" hidden></p>
+      <div class="table-scroll"><table>
         <thead><tr><th>SKU</th><th>Item</th><th class="num">Qty</th><th>Unit</th><th>Orders</th></tr></thead>
         <tbody id="picklist-body"></tbody>
-      </table>
+      </table></div>
     </section>
 
     <section id="queue-orders" aria-label="Open orders"></section>
