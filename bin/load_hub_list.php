@@ -243,6 +243,10 @@ function hll_plan(array $rows, bool $deactivateSamples): array
             $report[] = $row['sku'] . ' OFF ' . HLL_DOT . ' no pack price or size; added switched off at R0.00';
             $actions[] = ['insert-off', $row];
             $counts['off']++;
+        } elseif ((int) $old['active'] === 1 && (int) $old['cost_cents'] === 0) {
+            $report[] = $row['sku'] . ' OFF ' . HLL_DOT . ' no pack price or size and it was active at R0.00; switched off';
+            $actions[] = ['update-off', $row];
+            $counts['off']++;
         } else {
             $report[] = $row['sku'] . ' KEPT ' . HLL_DOT . ' no pack price or size; cost per ' . $row['unit'] . ' '
                 . hll_rands((int) $old['cost_cents']) . ' and ' . ((int) $old['active'] === 1 ? 'active' : 'switched off') . ' unchanged';
@@ -275,6 +279,11 @@ function hll_apply(array $actions, bool $deactivateSamples): int
             Db::exec(
                 'UPDATE ingredients SET name = ?, unit = ?, cost_cents = ?, fincon_item_no = ?, is_sample = 0, active = 1, updated_at = ? WHERE sku = ?',
                 [$r['name'], $r['unit'], $r['cost'], $r['item'], $now, $r['sku']]
+            );
+        } elseif ($action === 'update-off') {
+            Db::exec(
+                'UPDATE ingredients SET name = ?, unit = ?, fincon_item_no = ?, active = 0, updated_at = ? WHERE sku = ?',
+                [$r['name'], $r['unit'], $r['item'], $now, $r['sku']]
             );
         } else {
             Db::exec(
