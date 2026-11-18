@@ -1,0 +1,14 @@
+sku,name,unit,pack_size,pack_price,fincon_item_no
+TST010,Test Good Row,kg,1,10.00,
+tst011,Test Lower Case Sku,kg,1,10.00,
+TST012,Test Price Decimals,kg,1,1.234,
+TST013,Test Negative Price,kg,1,-1,
+TST014,,kg,1,10.00,
+TST015,Test Zero Size,kg,0,10.00,
+TST016,Test Size Decimals,kg,1.2345,10.00,
+TST017,Test Too Few Columns,kg
+TST018,Test Long Item No,kg,1,10.00,99999999999999999999999999
+TST019,Test No Unit,,1,10.00,
+TST021,Test Rounds To Zero,kg,1000,0.01,
+
+TST020,Test Good Too,kg,2,20.00,
