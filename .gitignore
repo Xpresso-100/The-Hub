@@ -31,3 +31,6 @@ Thumbs.db
 
 # Stop verify-gate counters (per session, local only)
 .claude/verify-gate-*.count
+
+# Browser test scratch inside the upload copy (tests/browser/serve.php --root bundle)
+/deploy/upload/hub/var/test/
