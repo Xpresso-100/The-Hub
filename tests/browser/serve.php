@@ -41,6 +41,13 @@ foreach (['/public/index.php', '/bin/migrate.php', '/bin/seed.php'] as $needed) 
 define('HUB_TEST_ROOT', $appRoot);
 require $repo . '/tests/lib/harness.php';
 
+// A run that was killed can leave <root>/var/test behind; remove that exact folder (and nothing else) first.
+// Bundle mode only: in repo mode var/test also holds the scratch folders of a concurrent `php tests/run.php`.
+$staleTestDir = HUB_TEST_ROOT . '/var/test';
+if ($root === 'bundle' && is_dir($staleTestDir) && !is_link($staleTestDir)) {
+    hub_rmdir($staleTestDir);
+}
+
 $cleanup = static function (): void {
     ServerProcess::stopAll();
     foreach ($GLOBALS['hub_test_dirs'] ?? [] as $dir) {

@@ -1,6 +1,6 @@
 'use strict';
 /*
- * Browser end-to-end test (build spec 2026-11-18, task E2.2): checks W1-W7 in headless Chromium.
+ * Browser end-to-end test (build spec 2026-11-18, task E2.2 + fix F3): checks W1-W9 in headless Chromium.
  *
  *   node tests/browser/run.cjs --root repo      serve the working copy
  *   node tests/browser/run.cjs --root bundle    serve deploy/upload/hub (the upload bundle)
@@ -12,7 +12,7 @@
  */
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 
 const ROOT_DIR = path.join(__dirname, '..', '..');
 const SERVE_PHP = path.join(__dirname, 'serve.php');
@@ -96,8 +96,9 @@ function startServerWith(php, root) {
       }
     };
     timer = setTimeout(function () {
-      child.kill();
-      done(reject, Object.assign(new Error('no PORT line within 90 s; stderr: ' + oneLine(err)), { started: true }));
+      stopChild(child).then(function () {
+        done(reject, Object.assign(new Error('no PORT line within 90 s; stderr: ' + oneLine(err)), { started: true }));
+      });
     }, 90000);
     child.on('error', function (e) { done(reject, e); });
     child.stderr.on('data', function (d) { err += d.toString(); });
@@ -554,6 +555,77 @@ async function main() {
       await ctx.close();
       ok(wide.length === 0, 'sideways scroll at 375 px: ' + wide.join('; '));
     });
+
+    // W9 must run while the queue is empty (W6 delivered the only order); W8 then fills it.
+    await check('W9', 'with an empty queue the warehouse page shows "Nothing waiting." exactly once, visible, above the pick list table', async function () {
+      const p = s.hq;
+      await openPage(p, base, 'warehouse.html');
+      await p.waitForLoadState('networkidle');
+      const r = await p.evaluate(function () {
+        const text = 'Nothing waiting.';
+        const hits = Array.prototype.filter.call(document.body.querySelectorAll('*'), function (el) {
+          return el.children.length === 0 && el.textContent.trim() === text;
+        });
+        const visible = hits.filter(function (el) {
+          const st = window.getComputedStyle(el);
+          const box = el.getBoundingClientRect();
+          return !el.hidden && st.display !== 'none' && st.visibility !== 'hidden' && box.width > 0 && box.height > 0;
+        });
+        const body = document.getElementById('picklist-body');
+        const table = body ? body.closest('table') : null;
+        return {
+          orderCards: document.querySelectorAll('.wh-order').length,
+          total: hits.length,
+          visible: visible.length,
+          occurrences: document.body.innerText.split(text).length - 1,
+          top: visible.length > 0 ? visible[0].getBoundingClientRect().top : null,
+          tableTop: table ? table.getBoundingClientRect().top : null
+        };
+      });
+      ok(r.orderCards === 0, 'queue is not empty: ' + r.orderCards + ' order card(s) on the page');
+      ok(r.total === 1, 'expected 1 element with "Nothing waiting.", found ' + r.total);
+      ok(r.visible === 1, 'expected 1 visible element with "Nothing waiting.", found ' + r.visible);
+      ok(r.occurrences === 1, '"Nothing waiting." appears ' + r.occurrences + ' times in the page text');
+      ok(r.tableTop !== null, 'pick list table not found');
+      ok(r.top < r.tableTop, '"Nothing waiting." (top ' + r.top + ') is not above the pick list table (top ' + r.tableTop + ')');
+    });
+
+    await check('W8', 'at 375 x 812 the warehouse page with one open order (order card and filled pick list) has no page-level sideways scroll', async function () {
+      ok(s.hubPage, 'W4 did not open the hub context');
+      const hp = s.hubPage;
+      await hp.goto(base + '/ordering.html');
+      await hp.locator('#ingredient-body tr').first().waitFor();
+      await hp.locator('#ingredient-body tr', { hasText: 'SMP001' }).locator('input').fill('3');
+      await hp.locator('#ingredient-body tr', { hasText: 'SMP004' }).locator('input').fill('1.5');
+      await hp.click('#order-submit');
+      await hp.waitForFunction(function () {
+        const m = document.getElementById('order-message');
+        return !!m && /placed/.test(m.textContent);
+      });
+      const placed = /Order #(\d+) placed/.exec(await hp.textContent('#order-message'));
+      ok(placed !== null, 'W8 order was not placed');
+
+      const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
+      ctx.setDefaultTimeout(15000);
+      watch(ctx, 'phone-order');
+      try {
+        const p = await ctx.newPage();
+        await login(p, base, HQ);
+        await openPage(p, base, 'warehouse.html');
+        await p.waitForLoadState('networkidle');
+        const card = p.locator('.wh-order', { hasText: 'Order #' + placed[1] + ' -' });
+        await card.waitFor({ state: 'visible' });
+        ok(await card.locator('table tbody tr').count() >= 2, 'order card has fewer than 2 line rows');
+        ok(await p.locator('#picklist-body tr').count() >= 2, 'pick list has fewer than 2 rows');
+        ok(await p.locator('#queue-empty').isHidden(), '"Nothing waiting." is shown while an order is open');
+        const w = await p.evaluate(function () {
+          return { doc: document.documentElement.scrollWidth, body: document.body.scrollWidth };
+        });
+        ok(w.doc <= 375 && w.body <= 375, 'sideways scroll at 375 px with an open order: documentElement ' + w.doc + ', body ' + w.body);
+      } finally {
+        await ctx.close();
+      }
+    });
   } catch (e) {
     failed++;
     console.log('FAIL RUN unexpected error ... ' + oneLine(e && e.message ? e.message : e, 500));
@@ -564,18 +636,29 @@ async function main() {
   return failed === 0 ? 0 : 1;
 }
 
+/* Close serve.php's stdin so its own cleanup runs, wait up to 10 s, kill only as a last resort (and say so). */
+async function stopChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+  const exited = new Promise(function (resolve) { child.once('exit', resolve); });
+  try { child.stdin.end(); } catch (e) { /* already closed */ }
+  const timedOut = await Promise.race([exited.then(function () { return false; }), sleep(10000).then(function () { return true; })]);
+  if (timedOut) {
+    console.log('WARN serve.php did not exit within 10 s after stdin was closed; killing it (its cleanup may not have run: check for php -S and var/test)');
+    if (process.platform === 'win32' && child.pid) {
+      try { spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }); } catch (e) { /* fall through */ }
+    }
+    child.kill();
+  }
+}
+
 async function shutdown(server, browser) {
   if (browser) {
     try { await browser.close(); } catch (e) { /* already gone */ }
   }
   if (server && server.child) {
-    const child = server.child;
-    const exited = new Promise(function (resolve) { child.on('exit', resolve); });
-    try { child.stdin.end(); } catch (e) { /* already closed */ }
-    const timedOut = await Promise.race([exited.then(function () { return false; }), sleep(15000).then(function () { return true; })]);
-    if (timedOut) {
-      child.kill();
-    }
+    await stopChild(server.child);
   }
 }
 
