@@ -45,3 +45,11 @@ Run branch `feat/hub-live-ops-golive` · base `c9bddf7` · started 18 Nov 2026 1
 | P1 push + report | Coordinator | todo | | |
 
 Merge counts: lane merges expected 4, got 3 kept + 1 reverted (A1). Reviews expected 4 (R1-R4).
+
+## Night run update (19 Nov session, Coordinator)
+- Push is BLOCKED by guard.ps1 [DEPLOY-GATE]; commits stay local; "push branch" is in OVERNIGHT.md Needs-me.
+- A3 superseded by A3b: deploy/sync-bundle.php merged; parity test restored; bundle synced (81 files, 0 extra); change set vs main 16 A, 3 M, 0 D. Deploy: 6 passed, 0 failed.
+- M2 green (154 passed, 0 failed; BROWSER 7/0 repo). E3 green (BROWSER 7/0 bundle).
+- R1 ledger, R2 reality-checker, R3 red-team, R4 popia: all PASS-WITH-FLAGS (details in OVERNIGHT.md).
+- F-R1 (loader never leaves R0.00 active; HubListLoader 15/0) and F-R2 (W7 populated warehouse; J8 total) merged. Login timing oracle in frozen src/Auth/Auth.php moved to tests/known-issues as a DECISION.
+- G2 green (both frozen diffs empty). G3 running. V1, V2, V3, report, DONE still to do.
