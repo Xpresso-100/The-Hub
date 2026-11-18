@@ -29,5 +29,9 @@ Finish the Hub go-live build: sync the upload copy (A3b), prove the journey end 
 ## Needs me (Damian)
 - Merge `feat/hub-live-ops-golive` to main (his yes), then `ship hub -DryRun` / `ship hub`.
 
+## Guard blocks (final, not retried)
+- 18 Nov: the push of the run branch to origin was blocked by guard.ps1 [DEPLOY-GATE] (T3). decision-gate: option A, high confidence. All pushes are BLOCKED for the run; commits stay local. Needs me: push the branch by hand. (The spec asks for early pushes; the guard overrides.)
+- 18 Nov: guard.ps1 also matched the words "git push" inside a log heredoc in a Bash call (false positive). Logs are now written with Edit, not Bash heredocs.
+
 ## Decisions (made without asking)
 - 18 Nov: [GRAPH DECISION] line with limited fan-out; only R1-R4 reviewers run in parallel (read-only). Pilot slice = M2.
