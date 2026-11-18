@@ -96,8 +96,11 @@
   }
 
   function renderPicklist(list) {
+    $('queue-empty').hidden = true;
     if (list.length === 0) {
-      $('picklist-body').innerHTML = '<tr><td colspan="5" class="wh-empty">Nothing waiting.</td></tr>';
+      $('picklist-body').innerHTML = '';
+      $('queue-empty').textContent = 'Nothing waiting.';
+      $('queue-empty').hidden = false;
       return;
     }
     $('picklist-body').innerHTML = list.map(function (it) {
@@ -125,8 +128,8 @@
       return '<tr><td>' + esc(l.sku) + '</td><td>' + esc(l.name) + '</td><td class="num">' + esc(Hub.qty(l.qty)) + '</td>' +
         '<td>' + esc(l.unit) + '</td></tr>';
     }).join('');
-    html += '<table><thead><tr><th>SKU</th><th>Item</th><th class="num">Qty</th><th>Unit</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody></table>';
+    html += '<div class="table-scroll"><table><thead><tr><th>SKU</th><th>Item</th><th class="num">Qty</th><th>Unit</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>';
     if (next) {
       html += '<p class="wh-next"><button type="button" data-id="' + esc(o.id) + '" data-to="' + esc(next.to) + '">' +
         esc(next.label) + '</button></p>';
@@ -136,7 +139,7 @@
 
   function renderOrders(orders, now) {
     if (orders.length === 0) {
-      $('queue-orders').innerHTML = '<div class="card wh-empty"><p>Nothing waiting.</p></div>';
+      $('queue-orders').innerHTML = '';
       return;
     }
     $('queue-orders').innerHTML = orders.map(function (o) {
