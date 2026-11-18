@@ -24,7 +24,10 @@ function skipName(string $name): bool
 {
     $n = strtolower($name);
     return $n === 'config.local.php' || $n === '.env' || $n === 'tests'
-        || str_ends_with($n, '.sqlite') || str_ends_with($n, '.db-journal');
+        || str_starts_with($n, '.env.')
+        || str_ends_with($n, '.sqlite') || str_ends_with($n, '.db-journal')
+        || str_ends_with($n, '.sqlite-wal') || str_ends_with($n, '.sqlite-shm')
+        || str_ends_with($n, '.bak');
 }
 
 /** @return array<string,string> relative path (forward slashes) => absolute source path */
@@ -41,7 +44,7 @@ function collect(string $dir, string $rel, bool $skip): array
         }
         $abs = $dir . '/' . $item;
         $r = $rel . '/' . $item;
-        if ($skip && skipName($item)) {
+        if ($skip && (skipName($item) || is_link($abs))) {
             continue;
         }
         if (is_dir($abs)) {
