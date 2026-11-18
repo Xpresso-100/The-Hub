@@ -32,7 +32,14 @@ Finish the Hub go-live build: sync the upload copy (A3b), prove the journey end 
 - R3 red-team: PASS-WITH-FLAGS (security-review skill could not be invoked; own review). One real hole, in FROZEN code: login username timing oracle, src/Auth/Auth.php:34-35 (unknown username = 2 bcrypt ops, known = 1; ratio 1.66-2.18 on 3 runs). Per spec s11 not fixed: failing test moved to tests/known-issues/login_username_timing_test.php; DECISION for Damian (suggested fix: verify against one fixed dummy hash, drop the password_hash call). Held: roles, location scope, mass assignment, password rules, deactivation, SQLi, XSS, CSRF n/a. Other flags: no login rate limit (Auth.php:28); IngredientController.php:51-56 fincon_item_no accepts control chars; AccountService.php:111-123 narrow deactivate/login race [Inference]; sync-bundle skip list (fixed by me: .env.*, *.sqlite-wal/-shm, *.bak, symlinks); Config.php:73 APP_ENV='Prod' not treated as production. Red-team commit 2baaf37 sits on branch worktree-agent-a7587b12345fa60cf (not merged; golive-R3 left at 32abe48).
 - N2b: CLAUDE.md bundle rule now says run sync-bundle.php (commit 2ee7d35).
 
+- G2 frozen check: both diffs empty. G3 on 37edbf3: `RESULT: 164 passed, 0 failed`; node --check 8 files clean; `BROWSER: 7 passed, 0 failed` (repo); `BROWSER: 7 passed, 0 failed` (bundle).
+- F-R1 merged (loader: existing R0.00 active row is switched off; HubListLoader 15/0). F-R2 merged (W7 measures the populated warehouse; J8 asserts R14.00).
+
+- V2 compliance-gate (HEAD 50380d9): PASS-WITH-FLAGS. Deterministic: frozen diffs empty, no existing test modified/deleted, php -l and node --check clean, sync-bundle never deletes, CLAUDE.md change = 1 line, no secrets/real prices. Flags: (6) LOW commit e02ce54 labelled R3 also hardened sync-bundle.php skip list (adds skips only; noted); (9) LOW the spec file (BUILD-SPEC-2026-11-18-go-live.md:574-580) names a staff first name and says the password goes by WhatsApp - use the role instead (Damian's file, left unchanged). [UNVERIFIED by V2: bundle browser run; Coordinator ran it, see Done log.]
+
 ## Blocked log
+- V3 cost report: NOT COMPUTED. trace-cost-analyst could not write a scratch script (READONLY-GUARD, final). No token/time/model-mix figures exist; none are claimed. Operator can run the aggregation from a non-read-only session (filter timestamps >= 2026-11-18T14:30Z, sum message.usage).
+- Red-team could not run the security-review skill (not invocable) and worked in its own worktree (commit 2baaf37 on branch worktree-agent-a7587b12345fa60cf, not merged).
 - (append rows: item · two attempts · evidence)
 
 ## Needs me (Damian)
