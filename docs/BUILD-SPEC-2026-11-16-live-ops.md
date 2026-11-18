@@ -185,7 +185,7 @@ No PHP. Uses the existing API: `GET api/ingredients?include_inactive=1` (hq) and
 - List of accounts with a Deactivate / Reactivate button.
 - Create form; the location dropdown comes from `GET api/admin/locations`.
 - "Suggest a password" button fills a 16-character password from `crypto.getRandomValues`, shown in the field.
-- After a successful create, show once: "Account created. Give Nicole these three things: username, email, password. She logs in with all three." Then clear the password field. The password is never put in `sessionStorage`, `localStorage`, the URL or the console.
+- After a successful create, show once: "Account created. Give the new user these three things: username, email, password. They log in with all three." Then clear the password field. The password is never put in `sessionStorage`, `localStorage`, the URL or the console.
 - Relative API paths, `Hub.escapeHtml`, no `eval`.
 
 **Tests (`tests/unit/Accounts/`, new files only):**
