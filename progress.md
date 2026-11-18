@@ -98,3 +98,6 @@ What I did:
 What is next:
 - Human: follow deploy/DEPLOY.md on xneelo; get 2 bcrypt hashes made with bin/hash_password.php; do the 3 checks; the .htaccess deny rules are only proven by check 3.
 - STATUS.md was already modified before this node and is left uncommitted.
+
+## 2026-11-19 - hardening wave 1
+TEST DISPUTE: tests/unit/HubListLoader/load_hub_list_test.php:154 - C-4 asserts a unit change on an existing sku is applied (kg to block, exit 0); Damian's decision 2 (19 Nov) and wave 1 item 3 require it to be refused. Damian approved a one-time amendment of this test only (19 Nov, in session); test-engineer makes the edit, not the coder.

@@ -151,7 +151,8 @@ test('C-3: blank price (or blank size) on a new sku -> inserted with active 0, c
     assert_same('load_hub_list: 0 active, 2 off, 0 kept, 0 samples off', hll_last_line($out), 'final line');
 });
 
-test('C-4: blank price on an existing priced sku -> cost and active unchanged; name, unit, item no updated', function (): void {
+// Amended 19 Nov 2026 with Damian's approval: C-4 used to assert the unit change was applied; decision 2 reverses that.
+test('C-4: blank price on an existing priced sku with a changed unit -> that row is REFUSED and left whole; other rows still load; exit 1', function (): void {
     $app = TestApp::start();
     [$code, $out] = hll_load($app, HLL_HEADER . "\nTST004,Test Butter,kg,10,125.00,F-OLD\n");
     assert_same(0, $code, 'first load; output: ' . $out);
@@ -160,16 +161,18 @@ test('C-4: blank price on an existing priced sku -> cost and active unchanged; n
     assert_same(1, $before['active'] ?? null, 'active first');
 
     [$code, $out] = hll_load($app, HLL_HEADER . "\nTST004,Test Butter Salted,block,10,,F-NEW\nTST005,Test Cream,l,,,\n");
-    assert_same(0, $code, 'second load; output: ' . $out);
+    assert_same(1, $code, 'second load exits 1 (a row was refused); output: ' . $out);
     $after = hll_row($app, 'TST004');
     assert_same(1250, $after['cost_cents'], 'cost unchanged');
     assert_same(1, $after['active'], 'active unchanged');
     assert_same(0, $after['is_sample'], 'is_sample unchanged');
-    assert_same('Test Butter Salted', $after['name'], 'name updated');
-    assert_same('block', $after['unit'], 'unit updated');
-    assert_same('F-NEW', $after['fincon_item_no'], 'item no updated');
-    assert_true(str_starts_with((string) hll_line_starting($out, 'TST004 '), 'TST004 KEPT'), 'reported KEPT: ' . $out);
-    assert_same('load_hub_list: 0 active, 1 off, 1 kept, 0 samples off', hll_last_line($out), 'final line');
+    assert_same('Test Butter', $after['name'], 'name unchanged');
+    assert_same('kg', $after['unit'], 'unit unchanged');
+    assert_same('F-OLD', $after['fincon_item_no'], 'item no unchanged');
+    assert_true(str_starts_with((string) hll_line_starting($out, 'TST004 '), 'TST004 REFUSED'), 'reported REFUSED: ' . $out);
+    $new = hll_row($app, 'TST005');
+    assert_true($new !== null && $new['active'] === 0 && $new['cost_cents'] === 0, 'TST005 still inserted, switched off');
+    hll_has_line($out, 'load_hub_list: 0 active, 1 off, 0 kept, 0 samples off, 1 refused', 'final stdout line');
 });
 
 test('C-5: a price of 0 never makes a row active (new sku, existing off sku, existing active sku)', function (): void {
