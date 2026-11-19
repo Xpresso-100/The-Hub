@@ -283,6 +283,40 @@ td button { padding: 8px 14px; }
   #orders-body td:nth-child(6)::before { content: "Total (R)"; }
   #orders-body tr:not(:has(td[colspan])) td:nth-child(7) { grid-column: 1 / -1; }
   #orders-body td:nth-child(7) button { width: 100%; }
+  /* recipes list and the batch result table (recipes.js writes six cells per row: SKU, Ingredient, Used, Unit, Unit cost, Line cost) */
+  table:has(> #recipes-body) thead, #batch-result thead { display: none; }
+  table:has(> #recipes-body), #recipes-body, #batch-result table, #batch-result tbody { display: block; }
+  #recipes-body tr:not(:has(td[colspan])), #batch-result tr:has(td) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  #recipes-body tr:not(:has(td[colspan])) td, #batch-result td { display: block; min-width: 0; border: 0; padding: 0; text-align: left; white-space: normal; }
+  #recipes-body td::before, #batch-result td::before {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  #recipes-body td:nth-child(1)::before { content: "Finished SKU"; }
+  #recipes-body td:nth-child(2)::before { content: "Name"; }
+  #recipes-body td:nth-child(3)::before { content: "Unit"; }
+  #recipes-body td:nth-child(4)::before { content: "Cost per unit"; }
+  #recipes-body td:nth-child(5)::before { content: "Status"; }
+  #recipes-body tr:not(:has(td[colspan])) td:nth-child(6) { grid-column: 1 / -1; }
+  #recipes-body td:nth-child(6) button { width: 100%; }
+  #batch-result td:nth-child(1)::before { content: "SKU"; }
+  #batch-result td:nth-child(2)::before { content: "Ingredient"; }
+  #batch-result td:nth-child(3)::before { content: "Used"; }
+  #batch-result td:nth-child(4)::before { content: "Unit"; }
+  #batch-result td:nth-child(5)::before { content: "Unit cost"; }
+  #batch-result td:nth-child(6)::before { content: "Line cost"; }
+  #batch-result tr:not(:has(td)) { display: flex; justify-content: space-between; background: var(--surface); }
+  #batch-result tr:not(:has(td)) th { display: block; border: 0; text-align: left; }
   #order-form tfoot tr { display: flex; justify-content: space-between; background: var(--surface); }
   #order-form tfoot th { display: block; text-align: left; border: 0; }
 }

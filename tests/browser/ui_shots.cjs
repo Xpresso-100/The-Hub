@@ -319,6 +319,17 @@ async function main() {
           }
         }
         await shoot(page, outDir, p.name, vp);
+        if (p.name === 'recipes') {
+          // the batch result table (written by recipes.js) through the real form
+          try {
+            await page.fill('#b-qty', '2');
+            await page.click('#batch-form button[type="submit"]');
+            await page.waitForSelector('#batch-result table');
+            await shoot(page, outDir, 'recipes-batch', vp);
+          } catch (e) {
+            console.log('WARN recipes-batch not shown: ' + oneLine(e.message, 120));
+          }
+        }
         if (p.name === 'login') {
           // the error state: a wrong password through the real form
           await page.fill('#username', 'nobody');

@@ -46,5 +46,5 @@ Type A: PHP back-office. Plain HTML pages in `public/` served by the PHP app, sm
 ## Known gaps (need script changes, not CSS)
 - Order state is written by the scripts as the raw word (for example `in_process`); a pill and a friendly label need a wrapping `<span>` in `ordering.js`.
 - A loading row and an empty row use the same style; a spinner or error row inside a table needs the script to mark it.
-- `recipes.html`, `reports.html`, `recipes.js` and `reports.js` are frozen by the live-ops build spec (line 71), so their tables have no `.table-scroll` wrapper; `.card { overflow-x: auto }` makes a wide table scroll inside its card instead.
+- `recipes.html`, `reports.html`, `recipes.js` and `reports.js` are frozen by the live-ops build spec (line 71), so their tables have no `.table-scroll` wrapper; `.card { overflow-x: auto }` makes a wide table scroll inside its card instead. On phones the recipes list and the batch result table stack into labelled two-column blocks (CSS only), as do the ordering form and order history; the reports tables still scroll inside their card.
 - Dark theme not built.

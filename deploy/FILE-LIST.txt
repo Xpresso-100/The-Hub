@@ -13,7 +13,7 @@
 361  public/.htaccess
 2248  public/accounts.html
 7319  public/assets/accounts.js
-11272  public/assets/app.css
+13209  public/assets/app.css
 4246  public/assets/app.js
 9508  public/assets/ingredients.js
 10501  public/assets/ordering.js
