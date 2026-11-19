@@ -32,7 +32,7 @@
 2179  public/stock.html
 1581  public/warehouse.html
 19  src/.htaccess
-10367  src/Auth/Auth.php
+10620  src/Auth/Auth.php
 1584  src/Auth/AuthController.php
 388  src/Auth/routes.php
 1688  src/Clock.php

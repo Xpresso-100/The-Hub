@@ -173,15 +173,20 @@ final class Auth
     private static function recordAttempt(string $key, \DateTimeImmutable $now): ?int
     {
         try {
-            $id = Db::insert('INSERT INTO login_attempts (username_key, attempted_at) VALUES (?, ?)', [$key, $now->format('Y-m-d H:i:s')]);
-            // Rows older than 30 minutes can never matter again (a lock needs 5 failures inside 15 minutes).
-            Db::exec('DELETE FROM login_attempts WHERE attempted_at < ?', [$now->modify('-30 minutes')->format('Y-m-d H:i:s')]);
-            return (int) $id;
+            $id = (int) Db::insert('INSERT INTO login_attempts (username_key, attempted_at) VALUES (?, ?)', [$key, $now->format('Y-m-d H:i:s')]);
         } catch (\PDOException $e) {
             // The table is missing (deploy/sql/04-hardening.sql not run yet): keep logins working, shout in the log.
             error_log('HUB-ALERT login_attempts unavailable, failed-login limit is OFF: ' . $e->getMessage());
             return null;
         }
+        // Housekeeping is separate from the security decision: if it fails, the attempt above still counts.
+        try {
+            // Rows older than 30 minutes can never matter again (a lock needs 5 failures inside 15 minutes).
+            Db::exec('DELETE FROM login_attempts WHERE attempted_at < ?', [$now->modify('-30 minutes')->format('Y-m-d H:i:s')]);
+        } catch (\PDOException $e) {
+            error_log('HUB-ALERT login_attempts cleanup failed: ' . $e->getMessage());
+        }
+        return $id;
     }
 
     /** Removes one attempt row (a locked attempt must not extend the lock). */
