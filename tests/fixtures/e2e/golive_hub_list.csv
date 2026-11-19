@@ -1,0 +1,5 @@
+sku,name,unit,pack_size,pack_price,fincon_item_no
+E2E001,Test Flour,kg,25,200.00,
+E2E002,Test Sugar,kg,10,35.00,
+E2E003,Test Cream,l,3,10.00,
+E2E004,Test Spice Mix,kg,,,

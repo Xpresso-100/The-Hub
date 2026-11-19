@@ -1,0 +1,4 @@
+DONE 18 Nov 2026. Proof on 6804f27: php tests/run.php = RESULT: 164 passed, 0 failed; node tests/browser/run.cjs --root bundle = BROWSER: 7 passed, 0 failed.
+FINAL report: docs/BUILD-REPORT-2026-11-18.md
+NOT PUSHED: guard.ps1 [DEPLOY-GATE] blocked every agent push. Push feat/hub-live-ops-golive by hand, then decide: merge, then ship.
+Open: 4 decisions (report s10); V3 cost not computed.

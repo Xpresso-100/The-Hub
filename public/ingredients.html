@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingredients - The Hub</title>
+  <link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+  <header class="hub-header"><h1>The Hub</h1><nav id="hub-nav" aria-label="Main"></nav></header>
+  <main>
+    <section class="card">
+      <h2>Ingredients and costs</h2>
+      <p class="muted">Costs are HQ warehouse cost per unit in rand, excl. VAT. A new cost applies to new orders only.</p>
+      <p class="muted">Sample ingredients cannot be ordered in production. Load the real ingredients, then deactivate the samples.</p>
+      <p><label for="ing-show-inactive"><input type="checkbox" id="ing-show-inactive"> Show inactive ingredients</label></p>
+      <div id="ing-list-message" class="message hidden" role="status"></div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>SKU</th><th>Name</th><th>Unit</th><th class="num">Cost (R, excl. VAT)</th><th>FinCon item</th><th>Type</th><th>Status</th><th></th></tr></thead>
+        <tbody id="ing-body"><tr><td colspan="8" class="muted">Loading&hellip;</td></tr></tbody>
+      </table></div>
+    </section>
+
+    <section class="card">
+      <h2 id="ing-form-title">Add an ingredient</h2>
+      <form id="ing-form" novalidate>
+        <label for="ing-sku">SKU (2 to 20 characters: capital letters, digits and hyphen)</label>
+        <input type="text" id="ing-sku" maxlength="20" autocomplete="off" autocapitalize="characters">
+        <div class="muted" id="ing-sku-err" role="alert"></div>
+        <label for="ing-name">Name (1 to 150 characters)</label>
+        <input type="text" id="ing-name" maxlength="150" autocomplete="off">
+        <div class="muted" id="ing-name-err" role="alert"></div>
+        <label for="ing-unit">Unit (1 to 20 characters, for example kg)</label>
+        <input type="text" id="ing-unit" maxlength="20" autocomplete="off">
+        <div class="muted" id="ing-unit-err" role="alert"></div>
+        <label for="ing-cost">Cost per unit (R, excl. VAT, up to 2 decimals)</label>
+        <input type="text" id="ing-cost" inputmode="decimal" autocomplete="off" placeholder="12.50">
+        <div class="muted" id="ing-cost-err" role="alert"></div>
+        <label for="ing-fincon">FinCon item number (optional, at most 25 characters)</label>
+        <input type="text" id="ing-fincon" maxlength="25" autocomplete="off">
+        <div class="muted" id="ing-fincon-err" role="alert"></div>
+        <p><label for="ing-active"><input type="checkbox" id="ing-active" checked> Active (can be ordered)</label></p>
+        <p>
+          <button type="submit" id="ing-save">Save ingredient</button>
+          <button type="button" id="ing-clear" class="secondary">Clear form</button>
+        </p>
+        <div id="ing-message" class="message hidden" role="status"></div>
+      </form>
+    </section>
+  </main>
+  <script src="assets/app.js"></script>
+  <script src="assets/ingredients.js"></script>
+</body>
+</html>
