@@ -12,21 +12,21 @@
     <section class="card" id="stock-card">
       <h2>Stock status (FinCon)</h2>
       <p class="muted" id="stock-meta">Loading&hellip;</p>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>SKU</th><th>Item</th><th>Unit</th><th>Status</th></tr></thead>
         <tbody id="stock-body"></tbody>
-      </table>
+      </table></div>
     </section>
 
     <section class="card hidden" id="order-card">
       <h2>Order ingredients from HQ (at cost)</h2>
       <p class="muted">Prices are HQ warehouse cost, excl. VAT. Internal transfer - not a VAT invoice.</p>
       <form id="order-form" novalidate>
-        <table>
+        <div class="table-scroll"><table>
           <thead><tr><th>SKU</th><th>Ingredient</th><th>Unit</th><th class="num">Cost (R)</th><th class="num">Qty</th><th class="num">Line (R)</th></tr></thead>
           <tbody id="ingredient-body"></tbody>
           <tfoot><tr><th colspan="5" class="num">Total (R)</th><th class="num" id="order-total">0.00</th></tr></tfoot>
-        </table>
+        </table></div>
         <label for="delivery-date">Requested delivery date (optional)</label>
         <input type="date" id="delivery-date">
         <label for="order-notes">Notes (optional, max 500)</label>
@@ -49,10 +49,10 @@
           <option value="cancelled">cancelled</option>
         </select>
       </div>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>#</th><th>Location</th><th>Placed</th><th>Status</th><th class="num">Lines</th><th class="num">Total (R)</th><th></th></tr></thead>
         <tbody id="orders-body"></tbody>
-      </table>
+      </table></div>
       <div id="orders-message" class="message hidden" role="status"></div>
     </section>
 

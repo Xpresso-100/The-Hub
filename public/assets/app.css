@@ -1,95 +1,292 @@
-/* The Hub - shared styles. Module pages add their own rules in their own files only if needed. */
+/* The Hub - shared styles (T-11, from design/DESIGN.md). Module pages add their own rules in their own files only if needed.
+   Light only tonight. System font stack, no web fonts. Colours are the franchisee Control Tower tokens (DESIGN.md s1). */
 :root {
-  --ink: #1f2328;
-  --muted: #5b636e;
-  --line: #d8dde3;
-  --bg: #f6f7f9;
-  --card: #ffffff;
-  --accent: #8a3b12;
-  --ok: #1a7f37;
-  --warn: #9a6700;
-  --bad: #cf222e;
+  /* Control Tower tokens, same names as the source file */
+  --surface: #F4F1EC;
+  --raised: #FBFAF7;
+  --ink: #1C1B19;
+  --ink-soft: #6A655C;
+  --primary: #7A4A28;
+  --primary-dark: #5F3A20;
+  --accent: #E08A3C;
+  --ledger: #12674A;
+  --line: #E2DCD2;
+  --line-soft: #EEE9E1;
+  --st-pending: #6A655C;
+  --st-process: #8A5A14;
+  --st-transit: #275C9E;
+  --st-delivered: #12674A;
+  --alert: #B23A2F;
+  --white: #fff;
+  --shadow: 0 1px 2px rgba(28, 27, 25, .04), 0 2px 8px rgba(28, 27, 25, .04);
+
+  /* Names the Hub pages and scripts already use, kept as aliases (recipes.js uses var(--bad)) */
+  --muted: var(--ink-soft);
+  --bg: var(--surface);
+  --card: var(--raised);
+  --ok: var(--ledger);
+  --warn: var(--st-process);
+  --bad: var(--alert);
+
+  --font: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --touch: 44px;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font: 15px/1.5 var(--font);
   color: var(--ink);
-  background: var(--bg);
+  background: var(--surface);
+  -webkit-font-smoothing: antialiased;
 }
 
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ---------- header and navigation ---------- */
 header.hub-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
-  padding: 12px 24px;
-  background: var(--card);
+  column-gap: 20px;
+  row-gap: 4px;
+  padding: 10px 24px;
+  background: var(--raised);
   border-bottom: 1px solid var(--line);
 }
 
-header.hub-header h1 { margin: 0; font-size: 18px; color: var(--accent); }
+header.hub-header h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; color: var(--primary); }
 
-#hub-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
-#hub-nav a { color: var(--ink); text-decoration: none; }
-#hub-nav a:hover { text-decoration: underline; }
-.hub-user { color: var(--muted); margin-left: 12px; }
-
-main { max-width: 1100px; margin: 24px auto; padding: 0 24px; }
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
+#hub-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1 1 auto; }
+#hub-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 12px;
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
 }
+#hub-nav a:hover { background: var(--surface); text-decoration: underline; }
+.hub-user { color: var(--ink-soft); margin: 0 8px 0 auto; font-size: 13px; overflow-wrap: anywhere; }
 
-.card h2 { margin-top: 0; font-size: 16px; }
+main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
 
+/* ---------- cards and headings ---------- */
+.card {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+  overflow-x: auto; /* a table that is wider than the screen scrolls inside its card, not the page (recipes and reports have no .table-scroll wrapper) */
+}
+.card.narrow { max-width: 420px; }
+
+h2 { margin: 0 0 6px; font-size: 22px; line-height: 1.25; font-weight: 700; letter-spacing: -.01em; }
+.card h2 { margin-top: 0; font-size: 22px; }
+h3 { margin: 24px 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+p { margin: 0 0 10px; }
+p:has(> button) { margin-top: 16px; }
+.card > p.muted:first-of-type { margin-bottom: 14px; }
+
+/* ---------- tables ---------- */
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-weight: 600; color: var(--muted); font-size: 13px; }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+#detail-body, #batch-result { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-weight: 700; color: var(--ink); }
+thead th {
+  font-size: 12px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+tfoot th, tfoot td { border-top: 2px solid var(--line); border-bottom: 0; background: var(--surface); font-weight: 700; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td input, td select { max-width: 100%; }
+td.num input { width: 120px; text-align: right; }
 
-label { display: block; margin: 10px 0 4px; font-weight: 600; }
+/* empty, loading and error rows: the one-cell rows the scripts write ("Loading...", "No orders yet.") */
+td[colspan].muted { padding: 28px 12px; text-align: center; font-size: 15px; }
+
+/* ---------- forms ---------- */
+label { display: block; margin: 14px 0 6px; font-weight: 700; font-size: 13px; }
 input, select, textarea {
   font: inherit;
-  padding: 7px 9px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  font-size: 16px;
+  min-height: var(--touch);
+  padding: 8px 12px;
+  border: 1.5px solid var(--ink-soft);
+  border-radius: 9px;
   width: 100%;
   max-width: 360px;
-  background: #fff;
+  background: var(--surface);
+  color: var(--ink);
 }
+textarea { min-height: 88px; }
+input:disabled, select:disabled, textarea:disabled { background: var(--line-soft); border-color: var(--line); }
+input[type="checkbox"] {
+  width: 22px !important; /* recipes.html carries an inline width:auto and is not editable */
+  min-width: 22px;
+  height: 22px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--primary);
+}
+label:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--touch);
+  margin: 4px 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+label.hidden { display: none; }
 
+/* ---------- buttons: one style (dark), one variant (.secondary = outlined) ---------- */
 button {
   font: inherit;
-  padding: 7px 14px;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: var(--touch);
+  padding: 10px 18px;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--white);
   cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease;
 }
-button.secondary { background: #fff; color: var(--accent); }
+button:hover { background: #000; border-color: #000; }
+button.secondary, #hub-nav button { background: var(--raised); color: var(--ink); border-color: var(--ink-soft); }
+button.secondary:hover, #hub-nav button:hover { background: var(--surface); border-color: var(--ink); }
 button:disabled { opacity: .5; cursor: default; }
+td button { padding: 8px 14px; }
 
-.badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
-.badge.in_stock { background: #dafbe1; color: var(--ok); }
-.badge.low_stock { background: #fff8c5; color: var(--warn); }
-.badge.out_of_stock { background: #ffebe9; color: var(--bad); }
+/* ---------- badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--st-pending);
+  background: var(--surface);
+}
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge.in_stock, .badge.delivered { color: var(--ledger); background: rgba(18, 103, 74, .12); }
+.badge.low_stock, .badge.in_process { color: var(--st-process); background: rgba(224, 138, 60, .16); }
+.badge.out_of_stock, .badge.cancelled { color: var(--alert); background: rgba(178, 58, 47, .08); }
+.badge.pending { color: var(--st-pending); background: var(--surface); }
+.badge.out_for_delivery { color: var(--st-transit); background: rgba(39, 92, 158, .12); }
 
-.message { padding: 8px 12px; border-radius: 6px; margin: 10px 0; }
-.message.error { background: #ffebe9; color: var(--bad); }
-.message.ok { background: #dafbe1; color: var(--ok); }
-.muted { color: var(--muted); }
+/* order-state marks written into a table cell or text run (dot + coloured label; the cell keeps its text) */
+.st { font-weight: 700; color: var(--st-pending); }
+.st::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: currentColor; }
+.st.pending { color: var(--st-pending); }
+.st.in_process { color: var(--st-process); }
+.st.out_for_delivery { color: var(--st-transit); }
+.st.delivered { color: var(--st-delivered); }
+.st.cancelled { color: var(--alert); }
+
+/* ---------- messages (error, ok, info) ---------- */
+.message { padding: 12px 14px; border-radius: var(--radius); margin: 12px 0; font-size: 14px; font-weight: 600; border: 1px solid var(--line); }
+.message.error { background: rgba(178, 58, 47, .08); color: var(--alert); border-color: rgba(178, 58, 47, .35); border-left: 4px solid var(--alert); }
+.message.ok { background: rgba(18, 103, 74, .1); color: var(--ledger); border-color: rgba(18, 103, 74, .3); border-left: 4px solid var(--ledger); }
+.muted { color: var(--ink-soft); }
 .hidden { display: none; }
 
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-.tiles a { display: block; padding: 18px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); text-decoration: none; }
-.tiles a:hover { border-color: var(--accent); }
-.tiles strong { display: block; color: var(--accent); margin-bottom: 4px; }
+/* ---------- home tiles ---------- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.tiles a {
+  display: block;
+  min-height: var(--touch);
+  padding: 18px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: border-color .2s ease;
+}
+.tiles a:hover { border-color: var(--primary); }
+.tiles strong { display: block; color: var(--primary); font-size: 16px; margin-bottom: 4px; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 640px) {
+  header.hub-header { padding: 8px 12px; }
+  main { margin: 16px auto; padding: 0 12px; }
+  .card { padding: 16px; }
+  .card.narrow { max-width: none; }
+  h2, .card h2 { font-size: 20px; }
+  td.num input { width: 96px; }
+  .hub-user { margin-left: 0; }
+}
+
+/* Phone layout for the two ordering tables that need an input or a button on every row: each row becomes a
+   small two-column block with a label above each value (labels are CSS only; the cell text is unchanged). */
+@media (max-width: 640px) {
+  #order-form thead, #orders-card thead { display: none; }
+  #order-form table, #order-form tbody, #order-form tfoot, #orders-card table, #orders-card tbody { display: block; }
+  #ingredient-body tr, #orders-body tr:not(:has(td[colspan])) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  #ingredient-body td, #orders-body tr:not(:has(td[colspan])) td { display: block; min-width: 0; border: 0; padding: 0; text-align: left; white-space: normal; }
+  #ingredient-body td::before, #orders-body td::before {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    width: auto;
+    height: auto;
+    margin: 0;
+    border-radius: 0;
+    background: none;
+  }
+  td[colspan].muted { text-align: left; }
+  #ingredient-body td:nth-child(1)::before { content: "SKU"; }
+  #ingredient-body td:nth-child(2)::before { content: "Ingredient"; }
+  #ingredient-body td:nth-child(3)::before { content: "Unit"; }
+  #ingredient-body td:nth-child(4)::before { content: "Cost (R)"; }
+  #ingredient-body td:nth-child(5)::before { content: "Qty"; }
+  #ingredient-body td:nth-child(6)::before { content: "Line (R)"; }
+  #ingredient-body td input { width: 100%; max-width: none; }
+  #orders-body td:nth-child(1)::before { content: "Order"; }
+  #orders-body td:nth-child(2)::before { content: "Location"; }
+  #orders-body td:nth-child(3)::before { content: "Placed"; }
+  #orders-body td:nth-child(4)::before { content: "Status"; }
+  #orders-body td:nth-child(5)::before { content: "Lines"; }
+  #orders-body td:nth-child(6)::before { content: "Total (R)"; }
+  #orders-body tr:not(:has(td[colspan])) td:nth-child(7) { grid-column: 1 / -1; }
+  #orders-body td:nth-child(7) button { width: 100%; }
+  #order-form tfoot tr { display: flex; justify-content: space-between; background: var(--surface); }
+  #order-form tfoot th { display: block; text-align: left; border: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}

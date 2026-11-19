@@ -118,7 +118,7 @@
       '<h2><span>Order #' + esc(o.id) + ' - ' + esc(o.location_name) + '</span>' +
       '<span class="wh-age">' + esc(age(o.created_at, now)) + '</span></h2>' +
       '<dl>' +
-      '<dt>Status</dt><dd class="wh-status">' + esc(STATUS_TEXT[o.status] || o.status) + '</dd>' +
+      '<dt>Status</dt><dd class="wh-status st ' + esc(o.status) + '">' + esc(STATUS_TEXT[o.status] || o.status) + '</dd>' +
       '<dt>Placed</dt><dd>' + esc(when(o.created_at)) + ' by ' + esc(o.created_by) + '</dd>' +
       '<dt>Delivery wanted</dt><dd>' + esc(o.requested_delivery_date || 'none given') + '</dd>' +
       '<dt>Notes</dt><dd>' + esc(o.notes || '-') + '</dd>' +

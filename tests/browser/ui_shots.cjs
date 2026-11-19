@@ -237,6 +237,9 @@ async function placeOrders(page) {
 
 async function shoot(page, outDir, name, vp) {
   await page.waitForLoadState('networkidle');
+  await page.evaluate(function () {
+    Array.prototype.forEach.call(document.querySelectorAll('.table-scroll'), function (el) { el.scrollLeft = 0; });
+  });
   await sleep(400);
   const overflow = await page.evaluate(function () {
     const d = document.documentElement;

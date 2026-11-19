@@ -169,7 +169,7 @@
       }
       $('orders-body').innerHTML = rows.map(function (o) {
         return '<tr><td>' + esc(o.id) + '</td><td>' + esc(o.location_name) + '</td><td>' + esc(when(o.created_at)) + '</td>' +
-          '<td>' + esc(o.status) + '</td><td class="num">' + esc(o.line_count) + '</td>' +
+          '<td class="st ' + esc(o.status) + '">' + esc(o.status) + '</td><td class="num">' + esc(o.line_count) + '</td>' +
           '<td class="num">' + esc(Hub.money(o.total)) + '</td>' +
           '<td><button type="button" class="secondary" data-view="' + esc(o.id) + '">View</button></td></tr>';
       }).join('');
@@ -189,7 +189,7 @@
   function showDetail(o) {
     show('detail-card');
     $('detail-title').textContent = 'Order #' + o.id + ' - ' + o.location_name;
-    var html = '<p>Status: <strong>' + esc(o.status) + '</strong> &middot; placed ' + esc(when(o.created_at)) +
+    var html = '<p>Status: <strong class="st ' + esc(o.status) + '">' + esc(o.status) + '</strong> &middot; placed ' + esc(when(o.created_at)) +
       ' by ' + esc(o.created_by) + ' &middot; price basis: ' + esc(o.price_basis) + '</p>';
     html += '<p class="muted">Requested delivery: ' + esc(o.requested_delivery_date || 'not given') +
       (o.delivered_at ? ' &middot; delivered ' + esc(when(o.delivered_at)) : '') +
