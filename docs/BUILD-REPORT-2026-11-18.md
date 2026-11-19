@@ -81,3 +81,10 @@ Then: push the branch by hand; "merge"; `ship hub -DryRun` (expect 19 uploads, 0
 
 ## 11. Final task board
 Green: W0.1-W0.4, A1, A2, A3b, B1-B4, C1-C3, E1, E2.0-E2.2, E3, F1, F-R1, F-R2, M1, M2, N2, N2b, R1-R4, G2, G3, V1, V2. Not computed: V3. Blocked by guard: P1 push (by hand). Open decisions: 4 (above).
+
+## 12. Decisions received 19 Nov 2026 (Damian)
+1. Login timing hole and login rate limit: fixed today in a separate hardening build, not in this build.
+2. Loader unit change on a kept row: fixed in the hardening build (refuse the row and report it).
+3. Cancel rule confirmed: only head office cancels orders; Hub users cannot.
+4. Accounts: deactivate, never delete. Retention period and owner to be set by Clyde.
+Sections 10 and 11 above are unchanged; items 1-4 of section 10 are now answered here.
