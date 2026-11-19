@@ -10,6 +10,7 @@ declare(strict_types=1);
 // - size and price > 0  -> cost per unit = round_half_up(price_cents * 1000, size_milli), active, not a sample (ACTIVE)
 // - price/size blank or price 0 -> new sku inserted switched off at cost 0 (OFF); existing sku keeps cost and
 //   active, only name, unit and fincon_item_no are updated (KEPT). A row is never made active at R0.00.
+// - a cost per unit above 2147483647 cents (MySQL INT max for cost_cents) is invalid
 // - all or nothing: any invalid row -> every problem listed with its line number, nothing changed, exit 1
 // - --dry-run writes nothing; --deactivate-samples sets active = 0 on every is_sample = 1 row
 // Exit 0 OK, 1 invalid, 2 usage. Writes only The Hub's own ingredients table. Never touches FinCon.
@@ -23,6 +24,7 @@ use Hub\Money;
 const HLL_COLUMNS = ['sku', 'name', 'unit', 'pack_size', 'pack_price', 'fincon_item_no'];
 const HLL_USAGE = "Usage: php bin/load_hub_list.php [--dry-run] [--deactivate-samples] <file.csv>\n";
 const HLL_DOT = "\u{00B7}";
+const HLL_COST_MAX = 2147483647; // ingredients.cost_cents is MySQL INT (SPEC.md ingredients table)
 
 function hll_usage(string $problem): never
 {
@@ -189,6 +191,8 @@ foreach ($lines as $index => $text) {
         $costCents = Money::roundHalfUp($priceCents * 1000, $sizeMilli);
         if ($costCents === 0) {
             $problems[] = 'cost per ' . $unit . ' rounds to R0.00; check pack_size and pack_price';
+        } elseif ($costCents > HLL_COST_MAX) {
+            $problems[] = 'cost per ' . $unit . ' ' . hll_rands($costCents) . ' is above the maximum ' . hll_rands(HLL_COST_MAX);
         }
     }
 
