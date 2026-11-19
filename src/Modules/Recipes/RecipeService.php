@@ -204,7 +204,7 @@ final class RecipeService
     /** Trimmed non-empty string of at most $max characters, else null. */
     private static function text(mixed $value, int $max): ?string
     {
-        if (!is_string($value)) {
+        if (!is_string($value) || \Hub\Text::hasControl($value)) {
             return null;
         }
         $value = trim($value);

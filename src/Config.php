@@ -68,9 +68,12 @@ final class Config
         return strtolower(trim(self::get('APP_ENV')));
     }
 
+    /** The only APP_ENV values that are NOT production. Anything else (Prod, prd, a typo, empty) fails closed. */
+    private const NON_PRODUCTION_ENVS = ['local', 'dev', 'development', 'test', 'testing'];
+
     public static function isProduction(): bool
     {
-        return self::env() === 'production';
+        return !in_array(self::env(), self::NON_PRODUCTION_ENVS, true);
     }
 
     /** A path setting resolved against the repo root when relative. */

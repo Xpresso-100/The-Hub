@@ -12,8 +12,11 @@ declare(strict_types=1);
 //   active, only name, unit and fincon_item_no are updated (KEPT). A row is never made active at R0.00.
 // - a cost per unit above 2147483647 cents (MySQL INT max for cost_cents) is invalid
 // - all or nothing: any invalid row -> every problem listed with its line number, nothing changed, exit 1
+// - a row that changes an EXISTING ingredient's unit is REFUSED and listed in the report; the other rows still
+//   load and the exit code is 1 so the refusal is not missed (--dry-run shows the same line and exit code)
 // - --dry-run writes nothing; --deactivate-samples sets active = 0 on every is_sample = 1 row
-// Exit 0 OK, 1 invalid, 2 usage. Writes only The Hub's own ingredients table. Never touches FinCon.
+// Exit 0 OK; 1 = invalid file (nothing changed) OR some rows REFUSED for a unit change (every other row WAS
+// loaded: read the report); 2 usage. Writes only The Hub's own ingredients table. Never touches FinCon.
 
 require dirname(__DIR__) . '/src/bootstrap.php';
 
@@ -78,7 +81,8 @@ function hll_number(string $raw, int $decimals, string $delimiter): int|false|nu
 function hll_text_ok(string $value, int $min, int $max): bool
 {
     $len = mb_strlen($value, 'UTF-8');
-    return $len >= $min && $len <= $max && preg_match('/[\x00-\x1F\x7F]/', $value) !== 1;
+    // C0 controls, DEL and the C1 controls (U+0080-U+009F) are refused: one rule for the whole app (src/Text.php).
+    return $len >= $min && $len <= $max && !\Hub\Text::hasControl($value);
 }
 
 // ---------------------------------------------------------------- arguments
@@ -226,15 +230,24 @@ if ($errors !== []) {
 
 // ---------------------------------------------------------------- plan (reads) and apply (writes, one transaction)
 
-/** Reads current state and returns [report lines, counts, actions]. Writes nothing. */
+/** Reads current state and returns [report lines, counts, actions, refused skus (sku => true)]. Writes nothing. */
 function hll_plan(array $rows, bool $deactivateSamples): array
 {
     $report = [];
     $actions = [];
-    $counts = ['active' => 0, 'off' => 0, 'kept' => 0, 'samples' => 0];
+    $counts = ['active' => 0, 'off' => 0, 'kept' => 0, 'samples' => 0, 'refused' => 0];
     $priced = [];
+    $refusedSkus = [];
     foreach ($rows as $row) {
-        $old = Db::one('SELECT cost_cents, active FROM ingredients WHERE sku = ?', [$row['sku']]);
+        $old = Db::one('SELECT unit, cost_cents, active FROM ingredients WHERE sku = ?', [$row['sku']]);
+        if ($old !== null && (string) $old['unit'] !== $row['unit']) {
+            // A unit change would silently re-mean every stored quantity and cost: refuse this row, load the others.
+            $report[] = $row['sku'] . ' REFUSED ' . HLL_DOT . ' unit change from ' . $old['unit'] . ' to ' . $row['unit']
+                . ' is not allowed; row not loaded, ingredient unchanged';
+            $counts['refused']++;
+            $refusedSkus[$row['sku']] = true; // --deactivate-samples must leave a refused row exactly as it is
+            continue;
+        }
         if ($row['cost'] !== null) {
             $diff = $old === null ? 0 : $row['cost'] - (int) $old['cost_cents'];
             $report[] = $row['sku'] . ' ACTIVE per ' . $row['unit'] . ' ' . hll_rands($row['cost'])
@@ -260,16 +273,17 @@ function hll_plan(array $rows, bool $deactivateSamples): array
     }
     if ($deactivateSamples) {
         foreach (Db::all('SELECT sku FROM ingredients WHERE is_sample = 1 AND active = 1 ORDER BY sku') as $sample) {
-            if (!isset($priced[$sample['sku']])) {
+            if (!isset($priced[$sample['sku']]) && !isset($refusedSkus[$sample['sku']])) {
                 $report[] = $sample['sku'] . ' SAMPLE switched off';
                 $counts['samples']++;
             }
         }
     }
-    return [$report, $counts, $actions];
+    return [$report, $counts, $actions, $refusedSkus];
 }
 
-function hll_apply(array $actions, bool $deactivateSamples): int
+/** @param array<string,true> $refusedSkus rows left exactly as they are, even when they are samples */
+function hll_apply(array $actions, bool $deactivateSamples, array $refusedSkus = []): int
 {
     $now = Clock::nowDb();
     foreach ($actions as [$action, $r]) {
@@ -299,15 +313,20 @@ function hll_apply(array $actions, bool $deactivateSamples): int
     if (!$deactivateSamples) {
         return 0;
     }
-    return Db::exec('UPDATE ingredients SET active = 0, updated_at = ? WHERE is_sample = 1 AND active = 1', [$now]);
+    $keep = array_map('strval', array_keys($refusedSkus));
+    return Db::exec(
+        'UPDATE ingredients SET active = 0, updated_at = ? WHERE is_sample = 1 AND active = 1'
+        . ($keep === [] ? '' : ' AND sku NOT IN (' . implode(',', array_fill(0, count($keep), '?')) . ')'),
+        array_merge([$now], $keep)
+    );
 }
 
 if ($dryRun) {
     [$report, $counts] = hll_plan($rows, $deactivateSamples);
 } else {
     [$report, $counts] = Db::transaction(static function () use ($rows, $deactivateSamples): array {
-        [$report, $counts, $actions] = hll_plan($rows, $deactivateSamples);
-        $switchedOff = hll_apply($actions, $deactivateSamples);
+        [$report, $counts, $actions, $refusedSkus] = hll_plan($rows, $deactivateSamples);
+        $switchedOff = hll_apply($actions, $deactivateSamples, $refusedSkus);
         if ($switchedOff !== $counts['samples']) {
             throw new \RuntimeException('sample count changed during the load (' . $switchedOff . ' vs ' . $counts['samples'] . '); nothing changed');
         }
@@ -322,4 +341,8 @@ if ($dryRun) {
     echo "dry run: nothing written\n";
 }
 echo 'load_hub_list: ' . $counts['active'] . ' active, ' . $counts['off'] . ' off, ' . $counts['kept'] . ' kept, '
-    . $counts['samples'] . " samples off\n";
+    . $counts['samples'] . ' samples off' . ($counts['refused'] > 0 ? ', ' . $counts['refused'] . ' refused' : '') . "\n";
+if ($counts['refused'] > 0) {
+    fwrite(STDERR, $counts['refused'] . " row(s) REFUSED (unit change); every other row was loaded. Fix the unit in the file or change it by hand.\n");
+    exit(1);
+}

@@ -21,6 +21,12 @@ final class Auth
 {
     public const ROLES = ['hq', 'hub', 'franchise'];
 
+    /** 5 failed logins for one username inside 15 minutes lock that username for 15 minutes. */
+    private const LOCK_FAILURES = 5;
+    private const LOCK_SECONDS = 900;
+    /** bcrypt (cost 10, same as real hashes) of a random password nobody knows; verified when the username does not exist. */
+    private const DUMMY_HASH = '$2y$10$hX.VIMJVz1OwrjjG4JsS1.avRPlFEpyp61u3JlEscMT1loV2l5LKO';
+
     /**
      * Checks username + email + password. Returns ['token', 'expires_at' (ISO), 'user'] or null.
      * Every failure cause returns the same null (no account enumeration).
@@ -28,18 +34,32 @@ final class Auth
     public static function attempt(string $username, string $email, string $password): ?array
     {
         $row = Db::one(
-            'SELECT u.id, u.email, u.password_hash, u.active, l.active AS location_active
+            'SELECT u.id, u.username, u.email, u.password_hash, u.active, l.active AS location_active
                FROM users u JOIN locations l ON l.id = u.location_id
               WHERE u.username = ?',
             [$username]
         );
-        // Verify against a throwaway hash when the user is unknown so timing does not reveal it.
-        $hash = $row !== null ? (string) $row['password_hash'] : password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT);
+        // The counter is keyed on the STORED username when the account exists: the database matches usernames
+        // case- and accent-insensitively, so keying on the typed spelling would let "HQ.Admin" dodge the lock
+        // on "hq.admin". An unknown username is keyed on what was typed.
+        $key = self::attemptKey($row !== null ? (string) $row['username'] : $username);
+        $clockNow = Clock::now();
+        $locked = self::isLocked($key, $clockNow);
+        // The attempt is counted BEFORE the slow bcrypt check, so a burst of parallel guesses is counted as it
+        // arrives, not after each has finished. A successful login clears the count below. While locked nothing
+        // is recorded, so attempts cannot extend the lock.
+        if (!$locked) {
+            self::recordAttempt($key, $clockNow);
+        }
+        // Exactly one bcrypt verify on every path (known user, unknown user, locked username): a fixed
+        // dummy hash of the same cost stands in when there is no real hash, so timing reveals nothing.
+        $hash = $row !== null ? (string) $row['password_hash'] : self::DUMMY_HASH;
         $passwordOk = password_verify($password, $hash);
-        if ($row === null || !$passwordOk || strcasecmp((string) $row['email'], $email) !== 0
+        if ($locked || $row === null || !$passwordOk || strcasecmp((string) $row['email'], $email) !== 0
             || (int) $row['active'] !== 1 || (int) $row['location_active'] !== 1) {
             return null;
         }
+        self::clearFailures($key);
 
         $token = bin2hex(random_bytes(32));
         $ttlHours = max(1, Config::int('AUTH_TOKEN_TTL_HOURS'));
@@ -113,6 +133,58 @@ final class Auth
                 'type' => $user['location_type'],
             ],
         ];
+    }
+
+    /** A key for the failed-login counter: sha256 of the lower-cased username, so a typo or secret typed into the username box is never stored. */
+    private static function attemptKey(string $username): string
+    {
+        return hash('sha256', mb_strtolower($username, 'UTF-8'));
+    }
+
+    /**
+     * True when the 5 most recent failures for this key all fall inside a 15 minute span and the newest
+     * is under 15 minutes old: the lock ends 15 minutes after the 5th failure. Attempts made while locked
+     * are not recorded, so they cannot extend the lock.
+     */
+    private static function isLocked(string $key, \DateTimeImmutable $now): bool
+    {
+        try {
+            $rows = Db::all(
+                'SELECT attempted_at FROM login_attempts WHERE username_key = ? ORDER BY attempted_at DESC LIMIT ' . self::LOCK_FAILURES,
+                [$key]
+            );
+        } catch (\PDOException $e) {
+            // The table is missing (deploy/sql/04-hardening.sql not run yet): keep logins working, shout in the log.
+            error_log('HUB-ALERT login_attempts unavailable, failed-login limit is OFF: ' . $e->getMessage());
+            return false;
+        }
+        if (count($rows) < self::LOCK_FAILURES) {
+            return false;
+        }
+        $newest = (new \DateTimeImmutable((string) $rows[0]['attempted_at'], Clock::tz()))->getTimestamp();
+        $oldest = (new \DateTimeImmutable((string) $rows[self::LOCK_FAILURES - 1]['attempted_at'], Clock::tz()))->getTimestamp();
+        return ($newest - $oldest) < self::LOCK_SECONDS && $now->getTimestamp() < $newest + self::LOCK_SECONDS;
+    }
+
+    /** Records one attempt (counted as a failure until a success clears it). */
+    private static function recordAttempt(string $key, \DateTimeImmutable $now): void
+    {
+        try {
+            Db::insert('INSERT INTO login_attempts (username_key, attempted_at) VALUES (?, ?)', [$key, $now->format('Y-m-d H:i:s')]);
+            // Rows older than 30 minutes can never matter again (a lock needs 5 failures inside 15 minutes).
+            Db::exec('DELETE FROM login_attempts WHERE attempted_at < ?', [$now->modify('-30 minutes')->format('Y-m-d H:i:s')]);
+        } catch (\PDOException $e) {
+            error_log('HUB-ALERT login_attempts unavailable, failure not recorded: ' . $e->getMessage());
+        }
+    }
+
+    private static function clearFailures(string $key): void
+    {
+        try {
+            Db::exec('DELETE FROM login_attempts WHERE username_key = ?', [$key]);
+        } catch (\PDOException $e) {
+            error_log('HUB-ALERT login_attempts unavailable, failures not cleared: ' . $e->getMessage());
+        }
     }
 
     private static function loadUser(int $id): array

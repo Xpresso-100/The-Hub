@@ -296,8 +296,8 @@ final class OrderService
 
         $notes = $body['notes'] ?? null;
         if ($notes !== null) {
-            if (!is_string($notes) || mb_strlen(trim($notes)) > self::MAX_NOTES) {
-                $errors['notes'] = 'must be text of at most ' . self::MAX_NOTES . ' characters';
+            if (!is_string($notes) || mb_strlen(trim($notes)) > self::MAX_NOTES || \Hub\Text::hasControl($notes, true)) {
+                $errors['notes'] = 'must be text of at most ' . self::MAX_NOTES . ' characters, with no control characters';
             } else {
                 $notes = trim($notes) === '' ? null : trim($notes);
             }

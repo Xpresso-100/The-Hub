@@ -97,10 +97,11 @@ final class InventoryService
         if ($delta === null || $delta === 0 || abs($delta) > self::MAX_DELTA_MILLI) {
             $errors['qty_delta'] = 'must be a non-zero number, at most 3 decimals, between -100000 and 100000';
         }
-        $reason = is_string($body['reason'] ?? null) ? trim($body['reason']) : '';
+        $rawReason = is_string($body['reason'] ?? null) ? $body['reason'] : '';
+        $reason = trim($rawReason);
         $reasonLen = mb_strlen($reason, 'UTF-8');
-        if ($reasonLen < 1 || $reasonLen > 200) {
-            $errors['reason'] = 'required, 1-200 characters';
+        if ($reasonLen < 1 || $reasonLen > 200 || \Hub\Text::hasControl($rawReason)) {
+            $errors['reason'] = 'required, 1-200 characters, with no control characters';
         }
         if ($errors !== []) {
             throw HttpError::validation($errors);

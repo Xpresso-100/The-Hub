@@ -38,6 +38,17 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
   CONSTRAINT fk_auth_tokens_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Failed logins only, by username key and time. No IP address, no password, no user id (POPIA).
+-- username_key = sha256 of the lower-cased STORED username when the account exists, else of the submitted one.
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id INT NOT NULL AUTO_INCREMENT,
+  username_key CHAR(64) NOT NULL,
+  attempted_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_login_attempts_key_time (username_key, attempted_at),
+  KEY idx_login_attempts_time (attempted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS ingredients (
   sku VARCHAR(20) NOT NULL,
   name VARCHAR(150) NOT NULL,

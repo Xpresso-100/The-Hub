@@ -28,6 +28,16 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_auth_tokens_user ON auth_tokens (user_id);
 
+-- Failed logins only, by username key and time. No IP address, no password, no user id (POPIA).
+-- username_key = sha256 of the lower-cased STORED username when the account exists, else of the submitted one.
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username_key TEXT NOT NULL,
+  attempted_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_key_time ON login_attempts (username_key, attempted_at);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_time ON login_attempts (attempted_at);
+
 CREATE TABLE IF NOT EXISTS ingredients (
   sku TEXT PRIMARY KEY,
   name TEXT NOT NULL,

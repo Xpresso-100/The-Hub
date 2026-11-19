@@ -102,11 +102,11 @@ final class IngredientController
     /** Trimmed text of 1..$max characters, or null. */
     private static function text(mixed $value, int $max): ?string
     {
-        if (!is_string($value)) {
+        if (!is_string($value) || \Hub\Text::hasControl($value)) {
             return null;
         }
         $value = trim($value);
         $len = mb_strlen($value);
-        return ($len >= 1 && $len <= $max && preg_match('/[\x00-\x1F\x7F]/', $value) !== 1) ? $value : null;
+        return ($len >= 1 && $len <= $max) ? $value : null;
     }
 }

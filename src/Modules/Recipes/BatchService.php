@@ -45,8 +45,8 @@ final class BatchService
         }
         $notes = $body['notes'] ?? null;
         if ($notes !== null) {
-            if (!is_string($notes) || mb_strlen($notes, 'UTF-8') > 500) {
-                $errors['notes'] = 'at most 500 characters';
+            if (!is_string($notes) || mb_strlen($notes, 'UTF-8') > 500 || \Hub\Text::hasControl($notes, true)) {
+                $errors['notes'] = 'at most 500 characters, with no control characters';
             } else {
                 $notes = trim($notes) === '' ? null : trim($notes);
             }

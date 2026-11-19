@@ -81,3 +81,13 @@ The Hub only **reads** from FinCon; it never writes to it. FinCon is the orderin
 - `public_html/hub/` also holds `bin/`, which is only for the developer's command-line use and is blocked from the web.
 - Backups: before running any later SQL, export the Hub tables in phpMyAdmin first.
 - Sample data is labelled SAMPLE. Real recipes arrive from Jolandi (locked assumption A3).
+
+## 6. Hardening wave 1 (19 Nov 2026): one database step, BEFORE the upload
+- Back up the Hub tables in phpMyAdmin first (section 5).
+- In the **SQL** tab, run the one statement in `deploy/sql/04-hardening.sql` (creates the table `login_attempts`; nothing existing
+  is changed). Only then upload the new files (`ship hub`).
+- If the upload happens first, logins still work but the failed-login limit is OFF and the server error log gets lines starting
+  `HUB-ALERT login_attempts unavailable`. Run the statement, nothing else is needed.
+- Extra check after upload: log in once, then look in the error log for `HUB-ALERT`. There must be none.
+- Rollback: `DROP TABLE login_attempts;` (the code then runs with the limit OFF, as above).
+- Locked out? 5 wrong logins for one username lock it for 15 minutes. To clear it sooner, in phpMyAdmin run `DELETE FROM login_attempts;`.
