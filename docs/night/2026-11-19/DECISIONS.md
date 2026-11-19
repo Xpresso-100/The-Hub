@@ -24,3 +24,9 @@ Each entry: the open question, the reversible default taken, the question for Da
 - RUN.md T-11 says to restyle the recipes pages and the report. `docs/BUILD-SPEC-2026-11-16-live-ops.md:71` says never edit `public/recipes.html`, `public/reports.html`, `public/assets/recipes.js` and `public/assets/reports.js`.
 - Default: the approved build spec wins (CLAUDE.md truth order). Those 4 files are untouched, and the two pages change only through the shared `app.css`. They are still screenshotted before and after.
 - Question for Damian: lift the never-edit list for markup-only class changes on those two pages? Recommended: not until the recipes/reports module is un-hidden (BUILD-SPEC s9).
+
+## D6 (17:45): browser check W9 is red on this branch, and it was red before tonight
+- Proof: `node tests/browser/run.cjs --root repo` on e8b07a1 (before the restyle) gives `BROWSER: 8 passed, 1 failed`: "FAIL W9 ... queue is not empty: 1 order card(s) on the page". The same command at golive-F3's own commit 5077058 gives `BROWSER: 9 passed, 0 failed`.
+- Cause: main already had 55da334 ("F-R2: W7 measures a populated warehouse page"), where W7 places an order and leaves it open (`tests/browser/run.cjs:519-557`). golive-F3 branched before 55da334, and its W9 (`run.cjs:559-591`) assumes "W6 delivered the only order". Combined by the T-01 cherry-pick (f4c093b), W9 sees W7's order. This is a test-ordering clash, not an app defect: the "Nothing waiting." message is right for an empty queue (W9 passed at 5077058).
+- Default: not fixed. The repo rule "Never edit or delete an existing test" (CLAUDE.md) forbids it, and fixing the app would be wrong. W9 stays red and is listed. `php tests/run.php` does not include the browser suite, so the verify line is unaffected.
+- Question for Damian: approve a one-test edit, either moving W9 to run before W7 or having W7 deliver its own order? Recommended: move W9 before W7. It is the smallest change and keeps both checks' intent.
