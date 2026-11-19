@@ -12,7 +12,7 @@ Status values: todo / done / blocked / deferred. Evidence = one line with a path
 | T-06 refuse control characters | done (pre-existing) | 2323fac; C4-01 to C4-04 and C4-06 red at a9c8195, green on HEAD |
 | T-07 APP_ENV any-case production | done (pre-existing) | 2323fac; C5-01, C5-04 and C5-05 red at a9c8195, green on HEAD |
 | T-08 password shown once | done (pre-existing behaviour) | live since f667b8d; tests never red, so a mutant was used: C6-01 red (proof/T01-T08.md) |
-| T-09 end-to-end browser test | todo | |
+| T-09 end-to-end browser test | done, 1 check fails (deferred, D4) | tester (verifier) ran repo and bundle: `E2E: 16 passed, 2 failed`; only E4 fails, the batch message lacks "R" (e2e/RESULTS-repo.md, RESULTS-bundle.md); script 26b3f67 |
 | T-10 UI tokens (DESIGN.md, KIT.md) | todo | |
 | T-11 restyle | todo | |
 | T-12 gates on final head | todo | |
