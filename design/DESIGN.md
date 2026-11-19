@@ -40,6 +40,7 @@ Body text needs 4.5:1. Every pair that carries text:
 |---|---|
 | `--ink` on `--raised` (body in cards) | 16.49 |
 | `--ink` on `--surface` (page, inputs) | 15.28 |
+| placeholder text (`--ink-soft`, opacity 1) on `--surface` (input fill) | 5.14 |
 | `--ink-soft` on `--raised` (muted text) | 5.54 |
 | `--ink-soft` on `--surface` (count labels, pending badge) | 5.14 |
 | `--primary` on `--raised` (brand, tile titles) | 7.09 |
@@ -60,6 +61,8 @@ Body text needs 4.5:1. Every pair that carries text:
 | cancelled badge over `--surface` | 4.70 |
 | error message (`--alert` on 8% `--alert` over `--raised`) | 5.05 |
 | success message (`--ledger` on 10% `--ledger` over `--raised`) | 5.65 |
+
+The browser default placeholder (`#757575`) measured 4.09:1 on `--surface` and failed, so `app.css` sets `::placeholder { color: var(--ink-soft); opacity: 1 }`.
 
 Rejected: `--accent` as text is 2.56:1 on `--raised`, so it is never used for text. `--line` (`#E2DCD2`) is 1.31:1 against `--raised`, so it is used only for decorative dividers; input borders use `--ink-soft` (5.54:1, above the 3:1 non-text minimum, WCAG 1.4.11). The CT focus ring uses `--accent` (CT:119); the Hub uses `--primary` as CT does for its drill tiles (CT:224).
 
