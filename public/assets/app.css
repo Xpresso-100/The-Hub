@@ -363,7 +363,9 @@ td button { padding: 8px 14px; }
   #admin-recipes { --l1: "Item"; --l2: "Name"; --l3: "Unit"; --l4: "Status"; --l5: "Lines"; --l6: "Cost per unit (R)"; --l7: "Batches"; --l8: "Last produced"; }
   #detail-body tbody { --l1: "SKU"; --l2: "Ingredient"; --l3: "Qty"; --l4: "Unit"; --l5: "Unit cost (R)"; --l6: "Line (R)"; }
   /* row actions: full width, side by side */
-  #ing-body > tr > td:has(> button), #acc-body > tr > td:nth-child(7) { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #ing-body > tr:not(:has(td[colspan])) > td:has(> button), #acc-body > tr:not(:has(td[colspan])) > td:nth-child(7) { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  /* the Hub stock "more used than received" note lives inside td.num and must wrap */
+  td.num, th.num { white-space: normal; }
   #ing-body > tr > td:has(> button) > button, #acc-body > tr > td > button { flex: 1 1 120px; }
   /* totals rows */
   #detail-body tfoot tr, #report-totals tr { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; background: var(--surface); }
