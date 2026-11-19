@@ -14,7 +14,7 @@ Status values: todo / done / blocked / deferred. Evidence = one line with a path
 | T-08 password shown once | done (pre-existing behaviour) | live since f667b8d; tests never red, so a mutant was used: C6-01 red (proof/T01-T08.md) |
 | T-09 end-to-end browser test | done, 1 check fails (deferred, D4) | tester (verifier) ran repo and bundle: `E2E: 16 passed, 2 failed`; only E4 fails, the batch message lacks "R" (e2e/RESULTS-repo.md, RESULTS-bundle.md); script 26b3f67 |
 | T-10 UI tokens (DESIGN.md, KIT.md) | done | db55237: design/DESIGN.md (15 colour tokens, each citing a Control Tower CSS line, contrast measured), design/KIT.md; system fonts (D3); before shots in ui/before/ |
-| T-11 restyle | todo | |
+| T-11 restyle | done (2 items deferred, need JS) | a9798c0, bfa13db, d638a63, 1ca7f26 (CSS + class-only markup; frozen files untouched). Critic: BEFORE 10/20, AFTER 18/20, 0 blockers after 3 rounds (ui/CRITIC-round1..3.md). Verify on 1ca7f26: 202 passed, 0 failed |
 | T-12 gates on final head | todo | |
 | T-13 wave 2 spec draft | done (pre-existing) | 0ce7e66 docs/SPEC-wave2-DRAFT.md: all 4 items, each with SPEC rule, cost of not doing it, and questions for Jolandi/Clyde; header line 1 |
 | T-14 ship pack + REPORT.md | todo | |
