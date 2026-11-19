@@ -44,12 +44,14 @@ final class Auth
         // on "hq.admin". An unknown username is keyed on what was typed.
         $key = self::attemptKey($row !== null ? (string) $row['username'] : $username);
         $clockNow = Clock::now();
-        $locked = self::isLocked($key, $clockNow);
-        // The attempt is counted BEFORE the slow bcrypt check, so a burst of parallel guesses is counted as it
-        // arrives, not after each has finished. A successful login clears the count below. While locked nothing
-        // is recorded, so attempts cannot extend the lock.
-        if (!$locked) {
-            self::recordAttempt($key, $clockNow);
+        // Insert first, then judge the lock only from rows inserted BEFORE this one (lower id). Parallel guesses
+        // each get their own row in arrival order, so request 6 onward sees 5 earlier rows and is locked: there is
+        // no gap between "check" and "record" for a burst to slip through. A successful login clears the count
+        // below. A locked attempt deletes its own row again, so attempts cannot extend the lock.
+        $attemptId = self::recordAttempt($key, $clockNow);
+        $locked = $attemptId !== null && self::isLocked($key, $clockNow, $attemptId);
+        if ($locked) {
+            self::dropAttempt($attemptId);
         }
         // Exactly one bcrypt verify on every path (known user, unknown user, locked username): a fixed
         // dummy hash of the same cost stands in when there is no real hash, so timing reveals nothing.
@@ -142,19 +144,20 @@ final class Auth
     }
 
     /**
-     * True when the 5 most recent failures for this key all fall inside a 15 minute span and the newest
-     * is under 15 minutes old: the lock ends 15 minutes after the 5th failure. Attempts made while locked
-     * are not recorded, so they cannot extend the lock.
+     * True when the 5 most recent EARLIER attempts for this key (rows with an id below $beforeId, so the
+     * caller's own row never counts) all fall inside a 15 minute span and the newest is under 15 minutes old:
+     * the lock ends 15 minutes after the 5th failure. Locked attempts delete their own row, so they cannot
+     * extend the lock.
      */
-    private static function isLocked(string $key, \DateTimeImmutable $now): bool
+    private static function isLocked(string $key, \DateTimeImmutable $now, int $beforeId): bool
     {
         try {
             $rows = Db::all(
-                'SELECT attempted_at FROM login_attempts WHERE username_key = ? ORDER BY attempted_at DESC LIMIT ' . self::LOCK_FAILURES,
-                [$key]
+                'SELECT attempted_at FROM login_attempts WHERE username_key = ? AND id < ? ORDER BY attempted_at DESC, id DESC LIMIT ' . self::LOCK_FAILURES,
+                [$key, $beforeId]
             );
         } catch (\PDOException $e) {
-            // The table is missing (deploy/sql/04-hardening.sql not run yet): keep logins working, shout in the log.
+            // The table is unreadable: keep logins working, shout in the log.
             error_log('HUB-ALERT login_attempts unavailable, failed-login limit is OFF: ' . $e->getMessage());
             return false;
         }
@@ -166,15 +169,28 @@ final class Auth
         return ($newest - $oldest) < self::LOCK_SECONDS && $now->getTimestamp() < $newest + self::LOCK_SECONDS;
     }
 
-    /** Records one attempt (counted as a failure until a success clears it). */
-    private static function recordAttempt(string $key, \DateTimeImmutable $now): void
+    /** Records one attempt (counted as a failure until a success clears it). Returns its id, or null when the table is unavailable. */
+    private static function recordAttempt(string $key, \DateTimeImmutable $now): ?int
     {
         try {
-            Db::insert('INSERT INTO login_attempts (username_key, attempted_at) VALUES (?, ?)', [$key, $now->format('Y-m-d H:i:s')]);
+            $id = Db::insert('INSERT INTO login_attempts (username_key, attempted_at) VALUES (?, ?)', [$key, $now->format('Y-m-d H:i:s')]);
             // Rows older than 30 minutes can never matter again (a lock needs 5 failures inside 15 minutes).
             Db::exec('DELETE FROM login_attempts WHERE attempted_at < ?', [$now->modify('-30 minutes')->format('Y-m-d H:i:s')]);
+            return (int) $id;
         } catch (\PDOException $e) {
-            error_log('HUB-ALERT login_attempts unavailable, failure not recorded: ' . $e->getMessage());
+            // The table is missing (deploy/sql/04-hardening.sql not run yet): keep logins working, shout in the log.
+            error_log('HUB-ALERT login_attempts unavailable, failed-login limit is OFF: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /** Removes one attempt row (a locked attempt must not extend the lock). */
+    private static function dropAttempt(int $id): void
+    {
+        try {
+            Db::exec('DELETE FROM login_attempts WHERE id = ?', [$id]);
+        } catch (\PDOException $e) {
+            error_log('HUB-ALERT login_attempts unavailable, locked attempt not removed: ' . $e->getMessage());
         }
     }
 
